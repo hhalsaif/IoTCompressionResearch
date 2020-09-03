@@ -1,26 +1,12 @@
-#include <bits/stdc++.h> 
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <time.h> 
 #include <vector>
+#include <shannonMain.cpp>
 using namespace std; 
 
 vector<int> data;
 int numOfBits = 10;
-
-// declare structure node 
-struct node { 
-
-	// for storing symbol 
-	string sym; 
-
-	// for storing probability or frquency 
-	float pro; 
-    vector<int> arr;
-	int top; 
-} /* p[20] its really p[numOfBits] but it needs to be a constant.... */;
-
-typedef struct node node; 
 
 void createData ()
 {
@@ -36,4 +22,5 @@ void createData ()
 int main ()
 {
     createData();
+    assignMain(numOfBits);
 }
