@@ -17,14 +17,9 @@ struct node
     int top;
 }p[noOfBits];
 
-void assignMain(int noBit)
-{
-    noOfBits = noBit;
-}
-
 typedef struct node node;
 
-//function to find shannong code
+//function to find shannon code
 void shannon(int l, int h, node p[])
 {
     float pack1 = 0, pack2 = 0;
@@ -84,5 +79,101 @@ void shannon(int l, int h, node p[])
         shannon(l, k, p);
         shannon(k + 1, h, p);
     }
+}
+
+// Function to sort the symbols 
+// based on their probability or frequency 
+void sortByProbability(int numBits, node p[]) 
+{ 
+	node temp; 
+	for (int j = 1; j <= numBits - 1; j++) { 
+		for (int i = 0; i < numBits - 1; i++) { 
+			if ((p[i].pro) > (p[i + 1].pro)) { 
+				temp.pro = p[i].pro; 
+				temp.sym = p[i].sym; 
+
+				p[i].pro = p[i + 1].pro; 
+				p[i].sym = p[i + 1].sym; 
+
+				p[i + 1].pro = temp.pro; 
+				p[i + 1].sym = temp.sym; 
+			} 
+		} 
+	} 
+}
+
+// function to display shannon codes 
+void display(int numBits, node p[]) 
+{ 
+	int i, j; 
+	cout << "\n\n\n\tSymbol\tProbability\tCode"; 
+	for (i = numBits - 1; i >= 0; i--) { 
+		cout << "\n\t" << p[i].sym << "\t\t" << p[i].pro << "\t"; 
+		for (j = 0; j <= p[i].top; j++) 
+			cout << p[i].arr[j]; 
+	} 
+} 
+
+void ShannonDriver(int numBits)
+{
+    noOfBits = numBits;
+    float total = 0;
+    vector<float> x[noOfBits];
+    string ch;
+    node temp;
+
+    srand(0);
+
+    for(int i = 0; i < noOfBits; i++)
+    {
+        ch = (char)(65+i);
+
+        // Insert the symbol to node
+        p[i].sym += ch;
+    }
+
+    // creating probability
+    int fullBit = 1;
+    while(fullBit > 0)
+    {
+        float symProbability = (rand() % 100) / 100;
+        fullBit -= symProbability;
+
+        if(fullBit < 0)
+            fullBit += symProbability;
+        
+        else
+            x.push_back(symProbability); 
+    }
+
+    // Input probability of symbols 
+    for(int i = 0; i < noOfBits; i++)
+    {
+        // Insert the value to node
+        p[i].pro = x[i];
+        total += p[i].pro;
+
+        //checking max probability
+        if(total > 1)
+        {
+            cout << "Invalid";
+            total -= p[i].pro;
+            i--;
+        }
+    }
+
+    p[i].pro = 1 - total;
+
+    sortByProbability(numOfBits, p);
+
+    for(int i = 0; i < numOfBits; i++)
+        p[i].top = -1;
+    
+    // Find the shannon code
+    shannon(0, numOfBits - 1, p);
+
+    // Display the codes
+    display(numOfBits, p);
+    return;
 }
 
