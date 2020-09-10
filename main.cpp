@@ -1,11 +1,12 @@
+#include <iostream>
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <time.h> 
 #include <vector>
-#include <shannonMain.cpp>
+#include <shannonMain.h>
 using namespace std; 
 
-vector<int> data;
+vector<int> transData;
 int numOfBits = 10;
 
 void createData ()
@@ -15,12 +16,12 @@ void createData ()
     for (int i = 0; i < numOfBits; i++)
     {
         int bit = rand() % 1;
-        data.push_back(bit);
+        transData.push_back(bit);
     }
 }
 
 int main ()
 {
     createData();
-    assignMain(numOfBits);
+    ShannonDriver(transData, numOfBits);
 }

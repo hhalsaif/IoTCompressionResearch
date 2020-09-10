@@ -1,10 +1,10 @@
 #pragma once
-#include <bits/stdc++.h>
+#include <iostream>
 #include <vector>
 using namespace std;
 
-int noOfBits = 10;
-
+int noOfBits;
+vector<int> dataTrans[noOfBits];
 // declare structure node
 struct node 
 {
@@ -114,11 +114,11 @@ void display(int numBits, node p[])
 	} 
 } 
 
-void ShannonDriver(int numBits)
+void ShannonDriver(vector<int> transData, int numBits)
 {
     noOfBits = numBits;
     float total = 0;
-    vector<float> x[noOfBits];
+    vector<float> bitProb[noOfBits];
     string ch;
     node temp;
 
@@ -142,15 +142,16 @@ void ShannonDriver(int numBits)
         if(fullBit < 0)
             fullBit += symProbability;
         
-        else
-            x.push_back(symProbability); 
+        else 
+              bitProb.push_back(symProbability); 
+        
     }
 
     // Input probability of symbols 
     for(int i = 0; i < noOfBits; i++)
     {
         // Insert the value to node
-        p[i].pro = x[i];
+        p[i].pro = bitProb[i];
         total += p[i].pro;
 
         //checking max probability
@@ -162,18 +163,18 @@ void ShannonDriver(int numBits)
         }
     }
 
-    p[i].pro = 1 - total;
+    p[noOfBits].pro = 1 - total;
 
-    sortByProbability(numOfBits, p);
+    sortByProbability(noOfBits, p);
 
-    for(int i = 0; i < numOfBits; i++)
+    for(int i = 0; i < noOfBits; i++)
         p[i].top = -1;
     
     // Find the shannon code
-    shannon(0, numOfBits - 1, p);
+    shannon(0, noOfBits - 1, p);
 
     // Display the codes
-    display(numOfBits, p);
+    display(noOfBits, p);
     return;
 }
 
