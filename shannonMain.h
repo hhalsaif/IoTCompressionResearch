@@ -3,8 +3,8 @@
 #include <vector>
 using namespace std;
 
-int noOfBits;
-vector<int> dataTrans[noOfBits];
+int noOfBits = 10;
+vector<int> dataTrans;
 // declare structure node
 struct node 
 {
@@ -13,14 +13,14 @@ struct node
 
     // for stroing probability or frequency
     float pro;
-    vector<int> arr[noOfBits];
+    int* arr = new int [noOfBits];
     int top;
 }p[noOfBits];
 
 typedef struct node node;
 
 //function to find shannon code
-void shannon(int l, int h, node p[])
+void shannon(int l, int h, vector<node> p)
 {
     float pack1 = 0, pack2 = 0;
     float diff1 = 0, diff2 = 0;
@@ -114,11 +114,11 @@ void display(int numBits, node p[])
 	} 
 } 
 
-void ShannonDriver(vector<int> transData, int numBits)
+void ShannonDriver(vector<int> transData)
 {
-    noOfBits = numBits;
+    noOfBits = transData.size();
     float total = 0;
-    vector<float> bitProb[noOfBits];
+    vector<float> bitProb;
     string ch;
     node temp;
 

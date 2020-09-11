@@ -3,7 +3,8 @@
 #include <stdlib.h> 
 #include <time.h> 
 #include <vector>
-#include <shannonMain.h>
+#include "shannonMain.h"
+#include "huffman.h"
 using namespace std; 
 
 vector<int> transData;
@@ -23,5 +24,6 @@ void createData ()
 int main ()
 {
     createData();
-    ShannonDriver(transData, numOfBits);
+    //ShannonDriver(transData);
+    huffmanDriver(transData);
 }
