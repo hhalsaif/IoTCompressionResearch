@@ -4,7 +4,7 @@
 #include <time.h> 
 #include <vector>
 #include "shannonMain.h"
-#include "huffman.h"
+//#include "huffmanMain.h"
 using namespace std; 
 
 vector<int> transData;
@@ -24,6 +24,6 @@ void createData ()
 int main ()
 {
     createData();
-    //ShannonDriver(transData);
-    huffmanDriver(transData);
+    ShannonDriver(transData);
+    //huffmanDriver(transData);
 }

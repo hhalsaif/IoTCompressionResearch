@@ -16,7 +16,7 @@ struct node {
 	float pro; 
 	int *arr = new int[sizeOfData]; 
 	int top; 
-} p[sizeOfData]; //this probably needs to be fixed 
+} *p = new node [sizeOfData]; //this probably needs to be fixed 
 
 typedef struct node node; 
 
@@ -104,7 +104,6 @@ void display(int n, node p[])
 // Driver code 
 vector<int> shannonDriver(vector<int> transData) 
 {
-    int n;
     float total = 0;
     string ch;
     node temp;
@@ -152,9 +151,16 @@ vector<int> shannonDriver(vector<int> transData)
 	display(transData.size(), p); 
 	
     vector<int> compData;
-    for(int i = 0; i < sizeof(p); i++)
+    /*
+	for(int i = 0; i < sizeof(p); i++)
         compData.push_back(p[i]);
-    
+    */
+
+   for (int i = transData.size() - 1; i >= 0; i--) 
+   { 
+		for (int j = 0; j <= p[i].top; j++) 
+			compData.push_back(p[i].arr[j]); 
+	} 
     // The topPart doesnt really work
 
     return compData;
