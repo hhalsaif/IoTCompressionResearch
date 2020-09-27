@@ -103,7 +103,7 @@ for i in range(10):
 	# a bit value. 
 	# I need to find a way to always correctly choose the bit to change
 	arr = list(arr)
-	arr[4] = '1'
+	arr[10] = '1'
 	arr = ''.join(arr)
 
 	#important
