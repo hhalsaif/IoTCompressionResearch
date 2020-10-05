@@ -9,8 +9,9 @@ def calcRedundantBits(m):
 	# Iterate over 0 .. m and return the value 
 	# that satisfies the equation 
 
+	
 	for i in range(m): 
-		if(2**i >= m + i + 1): 
+		if(2**i >= m + i + 1):  # Use the formula 2 ^ r >= m + r + 1 
 			return i 
 
 
@@ -82,14 +83,15 @@ def detectError(arr, nr):
 for i in range(10):
 	# Enter the data to be transmitted
 	data = '0' 
-	randSize = random.randrange(5,20,1)
+	randSize = 20 #random.randrange(5,20,1)
 	for i in range(0, randSize):
 		data += str(random.choice([0,1]))
 
 	# Calculate the no of Redundant Bits Required 
 	m = len(data) 
 	r = calcRedundantBits(m) 
-
+	print ("m = " , m)
+	print ("r = " , r)
 	# Determine the positions of Redundant Bits 
 	arr = posRedundantBits(data, r) 
 
@@ -103,7 +105,7 @@ for i in range(10):
 	# a bit value. 
 	# I need to find a way to always correctly choose the bit to change
 	arr = list(arr)
-	arr[10] = '1'
+	arr[4] = '1'
 	arr = ''.join(arr)
 
 	#important
