@@ -1,5 +1,9 @@
-# huffman.py
-from huffman import *  #this imports all the functions in huffman.py
+from huffman import *
+from hamming import *
+# this imports all the functions in huffman.py and hamming.py
+
+# huffman code
+string = 'BCAADDDCCACACAC'
 
 # Calculating frequency
 freq = {}
@@ -10,7 +14,6 @@ for c in string:
         freq[c] = 1
 
 freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
-
 nodes = freq
 
 while len(nodes) > 1:
@@ -19,12 +22,51 @@ while len(nodes) > 1:
     nodes = nodes[:-2]
     node = NodeTree(key1, key2)
     nodes.append((node, c1 + c2))
-
     nodes = sorted(nodes, key=lambda x: x[1], reverse=True)
 
 huffmanCode = huffman_code_tree(nodes[0][0])
 
+print(freq)
+print()
 print(' Char | Huffman code ')
 print('----------------------')
 for (char, frequency) in freq:
     print(' %-4r |%12s' % (char, huffmanCode[char]))
+
+transData = ''
+for char in string:
+    transData += huffmanCode[char]
+print(transData)
+
+
+print()
+# hamming code
+
+# Enter the data to be transmitted
+data = transData
+
+# Calculate the no of Redundant Bits Required
+m = len(data)
+r = calcRedundantBits(m)
+print("m = ", m)
+print("r = ", r)
+# Determine the positions of Redundant Bits
+arr = posRedundantBits(data, r)
+
+# Determine the parity bits
+arr = calcParityBits(arr, r)
+
+# Data to be transferred
+print("Data transferred is " + arr)
+
+# Stimulate error in transmission by changing
+# a bit value.
+arr = list(arr)
+arr[4] = '1'
+arr = ''.join(arr)
+
+# important
+print("Error Data is " + arr)
+correction = detectError(arr, r)
+print("The position of error is " + str(correction))
+print("")

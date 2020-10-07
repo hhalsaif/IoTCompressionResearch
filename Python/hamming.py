@@ -1,7 +1,5 @@
 # Python program to dmeonstrate 
 # hamming code 
-import random
-
 def calcRedundantBits(m): 
 
 	# Use the formula 2 ^ r >= m + r + 1 
@@ -79,38 +77,3 @@ def detectError(arr, nr):
 
 	# Convert binary to decimal 
 	return int(str(res), 2) 
-
-for i in range(10):
-	# Enter the data to be transmitted
-	data = '0' 
-	randSize = 20 #random.randrange(5,20,1)
-	for i in range(0, randSize):
-		data += str(random.choice([0,1]))
-
-	# Calculate the no of Redundant Bits Required 
-	m = len(data) 
-	r = calcRedundantBits(m) 
-	print ("m = " , m)
-	print ("r = " , r)
-	# Determine the positions of Redundant Bits 
-	arr = posRedundantBits(data, r) 
-
-	# Determine the parity bits 
-	arr = calcParityBits(arr, r) 
-
-	# Data to be transferred 
-	print("Data transferred is " + arr) 
-
-	# Stimulate error in transmission by changing 
-	# a bit value. 
-	# I need to find a way to always correctly choose the bit to change
-	arr = list(arr)
-	arr[4] = '1'
-	arr = ''.join(arr)
-
-	#important
-
-	print("Error Data is " + arr) 
-	correction = detectError(arr, r) 
-	print("The position of error is " + str(correction)) 
-	print("")

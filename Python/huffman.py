@@ -1,8 +1,5 @@
 # Huffman Coding in python
 
-string = 'BCAADDDCCACACAC'
-
-
 # Creating tree nodes
 class NodeTree(object):
 
