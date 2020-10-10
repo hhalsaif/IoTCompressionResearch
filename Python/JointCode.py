@@ -1,6 +1,10 @@
+# Importing the tools I need from the commPy library
+import commpy.channelcoding
+import commpy.utilities
+
+# Importing premade functions that will help with code
 from huffman import *
 from hamming import *
-# this imports all the functions in huffman.py and hamming.py
 
 # huffman code
 string = 'BCAADDDCCACACAC'
@@ -59,14 +63,13 @@ arr = calcParityBits(arr, r)
 # Data to be transferred
 print("Data transferred is " + arr)
 
-# Stimulate error in transmission by changing
-# a bit value.
-arr = list(arr)
-arr[4] = '1'
-arr = ''.join(arr)
+# Stimulate error in transmission by adding gaussiaan noise
+transArr = list(arr)
+RecieveArr = awgn(arr, snr_dB, rate=1.0)
+
 
 # important
 print("Error Data is " + arr)
-correction = detectError(arr, r)
+correction = hamming_dist(transArr, RecieveArr)
 print("The position of error is " + str(correction))
 print("")

@@ -59,7 +59,7 @@ def calcParityBits(arr, r):
 	return arr 
 
 
-def detectError(arr, nr): 
+""" def detectError(arr, nr): 
 	n = len(arr) 
 	res = 0
 
@@ -76,4 +76,4 @@ def detectError(arr, nr):
 		res = res + val*(10**i) 
 
 	# Convert binary to decimal 
-	return int(str(res), 2) 
+	return int(str(res), 2)  """
