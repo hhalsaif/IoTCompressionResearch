@@ -1,6 +1,5 @@
 # Importing the tools I need from the commPy library
-import commpy.channelcoding
-import commpy.utilities
+import commpy
 
 # Importing premade functions that will help with code
 from huffman import *
