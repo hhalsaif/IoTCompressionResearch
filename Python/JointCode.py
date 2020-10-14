@@ -1,6 +1,7 @@
 # Importing the tools I need from the commPy library
-import commpy
-
+from commpy.utilities import hamming_dist
+from commpy.channels import awgn
+import random
 # Importing premade functions that will help with code
 from huffman import *
 from hamming import *
@@ -39,10 +40,7 @@ for (char, frequency) in freq:
 transData = ''
 for char in string:
     transData += huffmanCode[char]
-print(transData)
 
-
-print()
 # hamming code
 
 # Enter the data to be transmitted
@@ -63,8 +61,10 @@ arr = calcParityBits(arr, r)
 print("Data transferred is " + arr)
 
 # Stimulate error in transmission by adding gaussiaan noise
-transArr = list(arr)
-RecieveArr = awgn(arr, snr_dB, rate=1.0)
+transArr = map(int, arr)
+transArr = map(float, arr)
+SigNoiseR = random.uniform(-20, 10)
+RecieveArr = awgn(arr, SigNoiseR, rate=1.0)
 
 
 # important
