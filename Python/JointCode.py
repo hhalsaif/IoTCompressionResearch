@@ -1,5 +1,6 @@
 # Importing the tools I need from the commPy library
-import commpy
+from commpy.utilities import hamming_dist
+from commpy.channels import awgn
 
 # Importing premade functions that will help with code
 from huffman import *
@@ -64,7 +65,8 @@ print("Data transferred is " + arr)
 
 # Stimulate error in transmission by adding gaussiaan noise
 transArr = list(arr)
-RecieveArr = awgn(arr, snr_dB, rate=1.0)
+SNR = 2.0002
+RecieveArr = awgn(arr, SNR, rate=1.0)
 
 
 # important
