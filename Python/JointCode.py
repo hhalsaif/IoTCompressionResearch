@@ -1,8 +1,14 @@
+#%%
+
+# Importing general libraries 
+import numpy as np
+import matplotlib.pyplot as plt
+import random
 # Importing the tools I need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
-import random
-# Importing premade functions that will help with code
+
+# Importing premade functions that will help with celaning the code
 from huffman import *
 from hamming import *
 
@@ -61,13 +67,30 @@ arr = calcParityBits(arr, r)
 print("Data transferred is " + arr)
 
 # Stimulate error in transmission by adding gaussiaan noise
-transArr = map(int, arr)
-SigNoiseR = random.uniform(-20, 10)
-RecieveArr = awgn(arr, SigNoiseR, rate=1.0)
+transArr = np.array(list(arr), dtype=float)
 
+SigNoiseR = random.uniform(-20, 10) # generate SNR
 
-# important
-print("Error Data is " + arr)
-correction = hamming_dist(transArr, RecieveArr)
+recieveArr = awgn(np.array(transArr), SigNoiseR, rate=1.0)
+
+print("Data Recieved is ", recieveArr.astype(float))
+
+#plotting for better visuals
+plt.scatter(transArr, transArr)
+plt.show()
+
+plt.scatter(recieveArr, recieveArr)
+plt.show()
+
+#turning everything to int to find the hamming distance (position of error)
+transArr = transArr.astype(int)
+recieveArr = recieveArr.astype(int)
+correction = hamming_dist(transArr, recieveArr)
+
+# printing out everything and finiding the error
+print("Transmitted data is ", transArr)
+print("Recieved data is ", recieveArr)
 print("The position of error is " + str(correction))
 print("")
+
+# %%
