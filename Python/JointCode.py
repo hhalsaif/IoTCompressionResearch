@@ -1,5 +1,4 @@
 #%%
-
 # Importing general libraries 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,8 +11,11 @@ from commpy.channels import awgn
 from huffman import *
 from hamming import *
 
+# %%
 # huffman code
-string = 'BCAADDDCCACACAC'
+
+#The code
+string = 'BCCADDBC'
 
 # Calculating frequency
 freq = {}
@@ -47,6 +49,7 @@ transData = ''
 for char in string:
     transData += huffmanCode[char]
 
+# %%
 # hamming code
 
 # Enter the data to be transmitted
@@ -73,24 +76,28 @@ SigNoiseR = random.uniform(-20, 10) # generate SNR
 
 recieveArr = awgn(np.array(transArr), SigNoiseR, rate=1.0)
 
-print("Data Recieved is ", recieveArr.astype(float))
+print("Data Recieved is ", recieveArr)
 
-#plotting for better visuals
+# %%
+# plotting for better visuals
 plt.scatter(transArr, transArr)
 plt.show()
 
 plt.scatter(recieveArr, recieveArr)
 plt.show()
 
-#turning everything to int to find the hamming distance (position of error)
+# %%
+#turning everything to int and finding the hamming distance (position of error)
 transArr = transArr.astype(int)
 recieveArr = recieveArr.astype(int)
 correction = hamming_dist(transArr, recieveArr)
 
+# %%
 # printing out everything and finiding the error
+
 print("Transmitted data is ", transArr)
 print("Recieved data is ", recieveArr)
-print("The position of error is " + str(correction))
+print("The hamming distance is " + str(correction))
 print("")
 
 # %%
