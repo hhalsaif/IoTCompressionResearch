@@ -16,6 +16,8 @@ from hamming import *
 
 #The code
 string = 'BCCADDBC'
+print ("Our code is ", string)
+print()
 
 # Calculating frequency
 freq = {}
@@ -50,6 +52,39 @@ for char in string:
     transData += huffmanCode[char]
 
 # %%
+
+# Comparing our compressed code to the normal ASCII code values
+valueOfA = '01000001'
+valueOfB = '01000010'
+valueOfC = '01000011'
+valueOfD = '01000100'
+origData = ''
+
+for char in string:
+    if char == 'A':
+        origData += valueOfA
+    elif char == 'B':
+        origData += valueOfB
+    elif char == 'C':
+        origData += valueOfC
+    elif char == 'D':
+        origData += valueOfD
+
+origData = np.array(list(origData), dtype=int)
+compressedData = np.array(list(transData), dtype=int)
+
+print ("Normally our code would be of size ", origData.size)
+print ("After compression our code would be of size", compressedData.size)
+print ("Compression ratio is", origData.size/compressedData.size)
+
+# %%
+# plotting for better visuals
+plt.barh('Original Data', origData.size, align='center')
+plt.barh('Compressed Data', compressedData.size, align='center')
+plt.title('Data size before and after compression')
+plt.show()
+
+# %%
 # hamming code
 
 # Enter the data to be transmitted
@@ -72,7 +107,7 @@ print("Data transferred is ", arr)
 # Stimulate error in transmission by adding gaussiaan noise
 transArr = np.array(arr, dtype=float)
 
-SigNoiseR = random.uniform(-20, 10) # generate SNR -20, 10
+SigNoiseR = 40 # generate SNR -20, 10
 
 recieveArr = awgn(np.array(transArr), SigNoiseR, rate=1.0)
 
@@ -96,6 +131,7 @@ transData = np.array(list(transData), dtype=int)
 # %%
 # printing out everything and finiding the error
 
+print("Original Data is", origData)
 print("Data after compressions is", transData)
 print("Transmitted data is", transArr)
 print("Recieved data is", recieveArr)
