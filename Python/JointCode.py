@@ -67,12 +67,12 @@ arr = posRedundantBits(data, r)
 arr = calcParityBits(arr, r)
 
 # Data to be transferred
-print("Data transferred is " + arr)
-
+arr = np.array(list(arr), dtype=int)
+print("Data transferred is ", arr)
 # Stimulate error in transmission by adding gaussiaan noise
-transArr = np.array(list(arr), dtype=float)
+transArr = np.array(arr, dtype=float)
 
-SigNoiseR = random.uniform(-20, 10) # generate SNR
+SigNoiseR = random.uniform(-20, 10) # generate SNR -20, 10
 
 recieveArr = awgn(np.array(transArr), SigNoiseR, rate=1.0)
 
@@ -80,10 +80,9 @@ print("Data Recieved is ", recieveArr)
 
 # %%
 # plotting for better visuals
-plt.scatter(transArr, transArr)
-plt.show()
-
-plt.scatter(recieveArr, recieveArr)
+plt.plot(transArr, label="Transmitted Array")
+plt.plot(recieveArr, label="Recieved Array")
+plt.legend()
 plt.show()
 
 # %%
@@ -92,11 +91,14 @@ transArr = transArr.astype(int)
 recieveArr = recieveArr.astype(int)
 correction = hamming_dist(transArr, recieveArr)
 
+transData = np.array(list(transData), dtype=int)
+
 # %%
 # printing out everything and finiding the error
 
-print("Transmitted data is ", transArr)
-print("Recieved data is ", recieveArr)
+print("Data after compressions is", transData)
+print("Transmitted data is", transArr)
+print("Recieved data is", recieveArr)
 print("The hamming distance is " + str(correction))
 print("")
 
