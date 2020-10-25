@@ -26,5 +26,3 @@ def huffman_code_tree(node, left=True, binString=''):
     d.update(huffman_code_tree(l, True, binString + '0'))
     d.update(huffman_code_tree(r, False, binString + '1'))
     return d
-
-
