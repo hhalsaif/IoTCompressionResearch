@@ -48,8 +48,8 @@ for (char, frequency) in freq:
 
 transData = ''
 for char in string:
-    transData += huffmanCode[char]
-
+   transData += huffmanCode[char]
+ 
 # %%
 
 # Comparing our compressed code to the normal ASCII code values
@@ -78,8 +78,8 @@ print ("Compression ratio is", origData.size/compressedData.size)
 
 # %%
 # plotting for better visuals
-plt.barh('Original Data', origData.size, align='center')
-plt.barh('Compressed Data', compressedData.size, align='center')
+plt.bar('Original Data', origData.size, align='center')
+plt.bar('Compressed Data', compressedData.size, align='center')
 plt.title('Data size before and after compression')
 plt.show()
 
