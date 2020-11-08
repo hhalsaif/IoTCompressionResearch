@@ -6,6 +6,7 @@ import random
 # Importing the tools I need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
+from commpy.modulation import PSKModem, Modem
 
 # Importing premade functions that will help with celaning the code
 from huffman import *
@@ -46,9 +47,9 @@ print('----------------------')
 for (char, frequency) in freq:
     print(' %-4r |%12s' % (char, huffmanCode[char]))
 
-transData = ''
+compdata = ''
 for char in string:
-   transData += huffmanCode[char]
+   compdata += huffmanCode[char]
  
 # %%
 
@@ -70,24 +71,25 @@ for char in string:
         origData += valueOfD
 
 origData = np.array(list(origData), dtype=int)
-compressedData = np.array(list(transData), dtype=int)
+compressedData = np.array(list(compdata), dtype=int)
 
 print ("Normally our code would be of size ", origData.size)
 print ("After compression our code would be of size", compressedData.size)
 print ("Compression ratio is", origData.size/compressedData.size)
 
-# %%
+ # %%
 # plotting for better visuals
 plt.bar('Original Data', origData.size, align='center')
 plt.bar('Compressed Data', compressedData.size, align='center')
 plt.title('Data size before and after compression')
+plt.savefig('HuffmanCode_Comparision.png')
 plt.show()
 
 # %%
 # hamming code
 
 # Enter the data to be transmitted
-data = transData
+data = compdata
 
 # Calculate the no of Redundant Bits Required
 m = len(data)
@@ -103,35 +105,51 @@ arr = calcParityBits(arr, r)
 # Data to be transferred
 arr = np.array(list(arr), dtype=int)
 print("Data transferred is ", arr)
-# Stimulate error in transmission by adding gaussiaan noise
-transArr = np.array(arr, dtype=float)
-
-SigNoiseR = 40 # generate SNR -20, 10
-
-recieveArr = awgn(np.array(transArr), SigNoiseR, rate=1.0)
-
-print("Data Recieved is ", recieveArr)
 
 # %%
-# plotting for better visuals
-plt.plot(transArr, label="Transmitted Array")
-plt.plot(recieveArr, label="Recieved Array")
-plt.legend()
-plt.show()
+
+# simulating data transmission over a channel
+transArr = np.array(arr, dtype=int)
+
+# Stimulate error in transmission by adding gaussiaan noise
+mod = PSKModem(transArr.size)
+BER = np.empty([], dtype=float)
+BERRan = range (0, transArr.size+1)
+
+# use the monte carlo method to make sure that our code works
+SigNoiseR = 40
+modArr = mod.modulate(transArr)
+recieveArr = awgn(modArr, SigNoiseR, rate=1.0)
+demodArr = mod.demodulate(recieveArr, 'hard')
+errors = np.setdiff1d(transArr, demodArr)
+BER = np.append(BER, 1.0 * errors.size)
+print("The number of errors in our code is ", BER)
+
+print("Data Recieved is ", demodArr)
 
 # %%
 #turning everything to int and finding the hamming distance (position of error)
 transArr = transArr.astype(int)
-recieveArr = recieveArr.astype(int)
-correction = hamming_dist(transArr, recieveArr)
+demodArr = demodArr.astype(int)
 
-transData = np.array(list(transData), dtype=int)
+print(transArr)
+print(demodArr)
+
+correction = hamming_dist(transArr, demodArr)
+compdata = np.array(list(compdata), dtype=int)
+
+# %%
+# plotting for better visuals
+plt.plot(transArr)
+plt.plot(recieveArr)
+plt.show()
+
 
 # %%
 # printing out everything and finiding the error
 
 print("Original Data is", origData)
-print("Data after compressions is", transData)
+print("Data after compressions is", compdata)
 print("Transmitted data is", transArr)
 print("Recieved data is", recieveArr)
 print("The hamming distance is " + str(correction))
