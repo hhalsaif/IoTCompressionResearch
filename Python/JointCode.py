@@ -111,7 +111,6 @@ print("Data transferred is ", arr)
 # variables we will need when we transmit
 SigNoiseR = 20
 BER = np.empty([], dtype=float)
-fig, ax = plt.subplots(nrows=1,ncols=1)
 
 #%%
 
@@ -131,6 +130,8 @@ errors = np.setdiff1d(transArr, demodArr)
 BER = np.append(BER, 1.0 * errors.size)
 print("The number of errors in our code is ", BER)
 print("Data Recieved is ", demodArr)
+
+#plt.plot(transArr, BER, 'bo', transArr, BER, 'k')
 
 #%%
 
