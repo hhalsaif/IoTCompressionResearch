@@ -1,8 +1,8 @@
 #%%
 # Importing general libraries 
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
+from numpy.random import rand, randn 
 # Importing the tools I need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
@@ -15,22 +15,49 @@ from Transmission import *
 
 # %%
 
-def transmit(transArr):
+def transmit(transArr, SNR):
     #Simulating data transmission over a channel
-    SNR = 10
     mod = PSKModem(transArr.size)
     # Stimulate error in transmission by adding gaussian noise
     modArr = mod.modulate(transArr)
     recieveArr = awgn(modArr, SNR, rate=1.0)
     demodArr = mod.demodulate(recieveArr, 'hard')
+
+    print("The transferred size is ", transArr.size)
+    print("The recieved size is ", demodArr.size)
+    #calculating the BER
     errors = (transArr != demodArr).sum()
+    BER = errors/demodArr.size
+    #Printing the results
     print("The number of errors in our code is ", errors)
     print("Data Recieved is ", demodArr)
+    print("The Bit error ratio is ", BER)
+    
+    #plotting our result
+    EbN0arr = range(0,SNR)
+    BERarr = [None] * len(EbN0arr)
+    N = 500000 * 10
+    for n in range (0, len(BERarr)): 
+        EbNodB = EbN0arr[n]   
+        EbNo=10.0**(EbNodB/10.0)
+        x = 2 * (rand(N) >= 0.5) - 1
+        noise_std = 1/np.sqrt(2*EbNo)
+        y = x + noise_std * randn(N)
+        y_d = 2 * (y >= 0) - 1
+        error = (x != y_d).sum()
+        BERarr[n] = 1.0 * error / N
+    plt.semilogy(EbN0arr, BERarr)
+    plt.xlabel('EbNo(dB)')
+    plt.ylabel('BER')
+    plt.title('BER vs SNR')
+    
+    print("")
+    return recieveArr
 
 # %%
 # huffman code
 
-string = 'BCCADDBBCC' # The code
+string = 'BBCCA' # The code
 print ("Our code is ", string)
 print()
 
@@ -123,24 +150,17 @@ print("Data transferred is ", arr)
 
 #%%
 
-transmit(arr)
-transmit(np.random.randint(0,1,28))
-
-#transmit(origData)
-
-# %%
-#turning everything to int and finding the hamming distance (position of error)
-
-# plotting for better visuals
+SNR = 10
+transmit(origData, SNR)
+recieveArr = transmit(arr, SNR)
 plt.show()
 
-#correction = hamming_dist(transArr, demodArr)
 # %%
 # printing out everything and finiding the error
 
 print("Original Data is", origData)
 print("Data after compressions is", compressedData)
-print("Transmitted data is", transArr)
+print("Transmitted data is", arr)
 print("Recieved data is", recieveArr)
 print("")
 
