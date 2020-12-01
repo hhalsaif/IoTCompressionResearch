@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import rand, randn 
+
 # Importing the tools I need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
@@ -11,53 +12,12 @@ from commpy.modulation import PSKModem, Modem
 # Importing premade functions that will help clean the code
 from huffman import *
 from hamming import *
-from Transmission import *
-
-# %%
-
-def transmit(transArr, SNR):
-    #Simulating data transmission over a channel
-    mod = PSKModem(transArr.size)
-    # Stimulate error in transmission by adding gaussian noise
-    modArr = mod.modulate(transArr)
-    recieveArr = awgn(modArr, SNR, rate=1.0)
-    demodArr = mod.demodulate(recieveArr, 'hard')
-
-    print("The transferred size is ", transArr.size)
-    print("The recieved size is ", demodArr.size)
-    #calculating the BER
-    errors = (transArr != demodArr).sum()
-    BER = errors/demodArr.size
-    #Printing the results
-    print("The number of errors in our code is ", errors)
-    print("Data Recieved is ", demodArr)
-    print("The Bit error ratio is ", BER)
-    
-    #plotting our result
-    EbN0arr = range(0,SNR)
-    BERarr = [None] * len(EbN0arr)
-    N = 500000 * 10
-    for n in range (0, len(BERarr)): 
-        EbNodB = EbN0arr[n]   
-        EbNo=10.0**(EbNodB/10.0)
-        x = 2 * (rand(N) >= 0.5) - 1
-        noise_std = 1/np.sqrt(2*EbNo)
-        y = x + noise_std * randn(N)
-        y_d = 2 * (y >= 0) - 1
-        error = (x != y_d).sum()
-        BERarr[n] = 1.0 * error / N
-    plt.semilogy(EbN0arr, BERarr)
-    plt.xlabel('EbNo(dB)')
-    plt.ylabel('BER')
-    plt.title('BER vs SNR')
-    
-    print("")
-    return recieveArr
+#from Transmission import *
 
 # %%
 # huffman code
 
-string = 'BBCCA' # The code
+string = 'AABBC' # The code
 print ("Our code is ", string)
 print()
 
@@ -148,12 +108,61 @@ arr = calcParityBits(arr, r)
 arr = np.array(list(arr), dtype=int)
 print("Data transferred is ", arr)
 
+# %%
+
+def transmit(transArr, SNR):
+    #Simulating data transmission over a channel
+    mod = PSKModem(transArr.size)
+    # Stimulate error in transmission by adding gaussian noise
+    modArr = mod.modulate(transArr)
+    recieveArr = awgn(modArr, SNR, rate=1.0)
+    demodArr = mod.demodulate(recieveArr, 'hard')
+
+    print("The transferred size is ", transArr.size)
+    print("The recieved size is ", demodArr.size)
+    #calculating the BER
+    errors = (transArr != demodArr).sum()
+    BER = errors/demodArr.size
+    #Printing the results
+    print("The number of errors in our code is ", errors)
+    print("Data Recieved is ", demodArr)
+    print("The Bit error ratio is ", BER)
+    
+    #plotting our result
+    EbN0arr = range(0, SNR)
+    arrSize = len(EbN0arr)
+    BERarr = [None] * arrSize
+    N = 5000000
+
+    #for loops lets go
+    for i in range (0, len(BERarr)): 
+        for j in transArr:
+            EbNo=10.0**(EbN0arr[i]/10.0)
+            x = transArr[j]
+            noise_std = 1/np.sqrt(2*EbNo)
+            y = x + noise_std * randn(N)
+            y_d = 2 * (y >= 0) - 1
+            error = (x != y_d).sum()
+            BERarr[i] = 1.0 * error / N
+            #error += (transArr[n] != demodArr[n]).sum()
+            #BERarr[n] = 1.0 * error /N
+    #Plotting and printing
+    print("The theoritical BER is", BERarr[arrSize-1])
+    plt.semilogy(EbN0arr, BERarr, label = transArr.size)
+    plt.xlabel('EbNo(dB)')
+    plt.ylabel('BER')
+    plt.title('BER vs SNR')
+    plt.legend()
+    print("")
+    return recieveArr
+
 #%%
 
 SNR = 10
 transmit(origData, SNR)
 recieveArr = transmit(arr, SNR)
 plt.show()
+plt.savefig('BERSNR_Comparision.png')
 
 # %%
 # printing out everything and finiding the error
