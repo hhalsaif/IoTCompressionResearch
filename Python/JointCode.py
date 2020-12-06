@@ -14,14 +14,13 @@ from hamming import *
 
 # %%
 # huffman code
-
-sizeOfData = 1000
+sizeOfData = 50000
 symbols = list(string.ascii_uppercase)
 arr = np.random.choice(symbols, sizeOfData) # The code
 string = ""
 for i in arr:
     string += i
-print("Our code is ", string)
+#print("Our code is ", string)
 print("")
 
 freq = {}
@@ -74,6 +73,7 @@ plt.bar('Compressed Data', compressedData.size, align='center')
 plt.title('Data size before and after compression')
 plt.savefig('HuffmanCode_Comparision.png')
 plt.show()
+plt.close()
 
 # %%
 # hamming code
@@ -104,10 +104,11 @@ def transmit(transArr, SNR):
     mod = PSKModem(transArr.size)
     # Stimulate error in transmission by adding gaussian noise
     modArr = mod.modulate(transArr)
-    recieveArr = awgn(modArr, SNR)
+    recieveArr = awgn(modArr, SNR, rate=2)
     demodArr = mod.demodulate(recieveArr, 'hard')
     #calculating the BER
-    numErrs = np.sum(transArr != demodArr)
+    print(transArr.size, " and ", demodArr.size)
+    numErrs += np.sum(transArr != demodArr)
     BER = numErrs/demodArr.size
     #Plotting and Printing the results
     plt.semilogy(np.flip(np.arange(SNR)), np.linspace(0, BER, SNR), label = transArr.size)
@@ -129,7 +130,7 @@ def monteTransmit(EbNo, transArr):
         mod = PSKModem(transArr.size)
         # Stimulate error in transmission by adding gaussian noise
         modArr = mod.modulate(transArr)
-        recieveArr = awgn(modArr, SNR)
+        recieveArr = awgn(modArr, SNR, rate=2)
         demodArr = mod.demodulate(recieveArr, 'hard')
         #calculating the BER
         numErrs = np.sum(transArr != demodArr)
@@ -137,37 +138,40 @@ def monteTransmit(EbNo, transArr):
     plt.semilogy(EbNo, BERarr, label = transArr.size)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
-    print("Data Recieved is ", demodArr  )
+    print("Data Recieved is ", demodArr)
     print("The Bit error ratio is ", BERarr[i])
     print("")  
     return demodArr     
 
 #%%
 
-SNR = 20
+SNR = 10
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
+plt.yscale('log')
 plt.grid(True)
 transmit(origData, SNR)
 recieveArr = transmit(arr, SNR)
 plt.legend()
 plt.savefig('BERSNR_Comparision.png')
 plt.show()
+plt.close()
 
-
-
-EbNo = np.arange(SNR)
+"""
+EbNo = np.arange(5)
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
+plt.yscale('log')
 plt.grid(True)
 monteTransmit(EbNo, origData)
 monteTransmit(EbNo, arr)
 plt.legend()
 plt.savefig('BERSNR_Comparision2.png')
 plt.show()
-
+plt.close()
+"""
 # %%
 # printing out everything and finiding the error
 
