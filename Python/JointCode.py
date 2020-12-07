@@ -15,7 +15,7 @@ from hamming import *
 # %%
 # huffman code
 
-string = 'AABBC' # The code
+string = 'AAAABBBCCC' # The code
 print ("Our code is ", string)
 print()
 
@@ -109,29 +109,27 @@ print("Data transferred is ", arr)
 # %%
 
 def transmit(transArr, SNR):
+    print(transArr.size)
     #Simulating data transmission over a channel
     mod = PSKModem(transArr.size)
     # Stimulate error in transmission by adding gaussian noise
     modArr = mod.modulate(transArr)
     recieveArr = awgn(modArr, SNR)
     demodArr = mod.demodulate(recieveArr, 'hard')
-
-    print("The transferred size is ", transArr.size)
-    print("The recieved size is ", demodArr.size)
     #calculating the BER
-    errors = (transArr != demodArr).sum()
-    BER = errors/demodArr.size
-    #Printing the results
-    print("The number of errors in our code is ", errors)
+    numErrs = np.sum(transArr != demodArr)
+    BER = numErrs/demodArr.size
+    #Plotting and Printing the results
+    plt.semilogy(np.arange(SNR), np.linspace(0, BER, SNR), label = transArr.size)
+    print("The number of errors in our code is ", numErrs)
+    print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr)
     print("The Bit error ratio is ", BER)
-    
-    #plotting our result
-    plt.semilogy(SNR, BER, label = transArr.size)
     print("")
     return demodArr
 
 def monteTransmit(EbNo, transArr):
+    print(transArr.size)
     BERarr = [None] * EbNo.size
     for i in EbNo:
         SNR = EbNo[i]
@@ -148,19 +146,18 @@ def monteTransmit(EbNo, transArr):
         BERarr[i] = numErrs/transArr.size * 1.0
     plt.semilogy(EbNo, BERarr, label = transArr.size)
     print("The number of errors in our code is ", numErrs)
-    print("Data Transmitt is ", transArr)
+    print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr  )
     print("The Bit error ratio is ", BERarr)
     print("")  
     return demodArr     
+
 #%%
 
-SNR = 10
+SNR = 5
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
-plt.xscale('linear')
-plt.yscale('log')
 plt.grid(True)
 transmit(origData, SNR)
 recieveArr = transmit(arr, SNR)
@@ -170,12 +167,10 @@ plt.show()
 
 
 
-EbNo = np.arange(SNR)
+EbNo = np.arange(SNR+1)
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
-plt.xscale('linear')
-plt.yscale('log')
 plt.grid(True)
 monteTransmit(EbNo, origData)
 monteTransmit(EbNo, arr)
