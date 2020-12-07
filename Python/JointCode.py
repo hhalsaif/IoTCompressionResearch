@@ -11,7 +11,6 @@ from commpy.modulation import PSKModem, Modem
 # Importing premade functions that will help clean the code
 from huffman import *
 from hamming import *
-#from transmission import *
 
 # %%
 # huffman code
