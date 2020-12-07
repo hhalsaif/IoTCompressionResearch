@@ -2,6 +2,7 @@
 # Importing general libraries 
 import matplotlib.pyplot as plt
 import numpy as np
+import string
 # Importing the tools I need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
@@ -14,8 +15,10 @@ from hamming import *
 
 # %%
 # huffman code
+
 sizeOfData = 1000
-arr = np.random.choice(['A','B', 'C', 'D'], sizeOfData) # The code
+symbols = list(string.ascii_uppercase)
+arr = np.random.choice(symbols, sizeOfData) # The code
 string = ""
 for i in arr:
     string += i
@@ -57,24 +60,9 @@ for char in string:
 # %%
 
 # Comparing our compressed code to the normal ASCII code values
-valueOfA = '01000001'
-valueOfB = '01000010'
-valueOfC = '01000011'
-valueOfD = '01000100'
-origData = ''
-
-for char in string:
-    if char == 'A':
-        origData += valueOfA
-    elif char == 'B':
-        origData += valueOfB
-    elif char == 'C':
-        origData += valueOfC
-    elif char == 'D':
-        origData += valueOfD
-
+origData = ''.join(format(ord(i), 'b') for i in string)
 origData = np.array(list(origData), dtype=int)
-compressedData = np.array(list(compdata), dtype=int)
+compressedData = np.array(list(compdata),dtype=int)
 
 print ("Normally our code would be of size ", origData.size)
 print ("After compression our code would be of size", compressedData.size)
@@ -123,7 +111,7 @@ def transmit(transArr, SNR):
     numErrs = np.sum(transArr != demodArr)
     BER = numErrs/demodArr.size
     #Plotting and Printing the results
-    plt.semilogy(np.arange(SNR), np.linspace(0, BER, SNR), label = transArr.size)
+    plt.semilogy(np.flip(np.arange(SNR)), np.linspace(0, BER, SNR), label = transArr.size)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr)
@@ -151,7 +139,7 @@ def monteTransmit(EbNo, transArr):
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr  )
-    print("The Bit error ratio is ", BERarr)
+    print("The Bit error ratio is ", BERarr[i])
     print("")  
     return demodArr     
 
