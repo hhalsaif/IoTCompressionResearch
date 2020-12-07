@@ -14,10 +14,13 @@ from hamming import *
 
 # %%
 # huffman code
-
-string = 'AAAABBBCCC' # The code
-print ("Our code is ", string)
-print()
+sizeOfData = 1000
+arr = np.random.choice(['A','B', 'C', 'D'], sizeOfData) # The code
+string = ""
+for i in arr:
+    string += i
+print("Our code is ", string)
+print("")
 
 freq = {}
 # Calculating frequency
@@ -90,7 +93,6 @@ plt.show()
 
 # Enter the data to be transmitted
 data = compdata
-
 # Calculate the no of Redundant Bits Required
 m = len(data)
 r = calcRedundantBits(m)
@@ -109,6 +111,7 @@ print("Data transferred is ", arr)
 # %%
 
 def transmit(transArr, SNR):
+    numErrs = 0
     print(transArr.size)
     #Simulating data transmission over a channel
     mod = PSKModem(transArr.size)
@@ -137,13 +140,13 @@ def monteTransmit(EbNo, transArr):
         numErrs = 0
         #Simulating data transmission over a channel
         mod = PSKModem(transArr.size)
-        #simulate awgn
+        # Stimulate error in transmission by adding gaussian noise
         modArr = mod.modulate(transArr)
-        recieveArr =  awgn(modArr, SNR)
+        recieveArr = awgn(modArr, SNR)
         demodArr = mod.demodulate(recieveArr, 'hard')
-        #Calculating BER
+        #calculating the BER
         numErrs = np.sum(transArr != demodArr)
-        BERarr[i] = numErrs/transArr.size * 1.0
+        BERarr[i] = numErrs/demodArr.size
     plt.semilogy(EbNo, BERarr, label = transArr.size)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
@@ -154,7 +157,7 @@ def monteTransmit(EbNo, transArr):
 
 #%%
 
-SNR = 5
+SNR = 20
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
@@ -167,7 +170,7 @@ plt.show()
 
 
 
-EbNo = np.arange(SNR+1)
+EbNo = np.arange(SNR)
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
