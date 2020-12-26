@@ -1,3 +1,4 @@
+# %%
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
@@ -79,6 +80,32 @@ sf10 = np.array([10,-132.75,-130.25,-128.75])
 sf11 = np.array([11,-134.5,-132.75,-128.75])
 sf12 = np.array([12,-133.25,-132.25,-132.25])
 
+# global stuff
+#Rnd = random.seed(12345)
+nodes = []
+packetsAtBS = []
+env = simpy.Environment()
+
+# maximum number of packets the BS can receive at the same time
+maxBSReceives = 8
+
+
+# max distance: 300m in city, 3000 m outside (5 km Utz experiment)
+# also more unit-disc like according to Utz
+bsId = 1
+nrCollisions = 0
+nrReceived = 0
+nrProcessed = 0
+nrLost = 0
+
+Ptx = 14
+gamma = 2.08
+d0 = 40.0
+var = 0           # variance ignored for now
+Lpld0 = 127.41
+GL = 0
+
+sensi = np.array([sf7,sf8,sf9,sf10,sf11,sf12])
 #
 # check for collisions at base station
 # Note: called before a packet (or rather node) is inserted into the list
@@ -457,32 +484,6 @@ else:
     exit(-1)
 
 
-# global stuff
-#Rnd = random.seed(12345)
-nodes = []
-packetsAtBS = []
-env = simpy.Environment()
-
-# maximum number of packets the BS can receive at the same time
-maxBSReceives = 8
-
-
-# max distance: 300m in city, 3000 m outside (5 km Utz experiment)
-# also more unit-disc like according to Utz
-bsId = 1
-nrCollisions = 0
-nrReceived = 0
-nrProcessed = 0
-nrLost = 0
-
-Ptx = 14
-gamma = 2.08
-d0 = 40.0
-var = 0           # variance ignored for now
-Lpld0 = 127.41
-GL = 0
-
-sensi = np.array([sf7,sf8,sf9,sf10,sf11,sf12])
 if experiment in [0,1,4]:
     minsensi = sensi[5,2]  # 5th row is SF12, 2nd column is BW125
 elif experiment == 2:
@@ -575,3 +576,5 @@ myfile.close()
 #         nfile.write("{} {} {}\n".format(n.x, n.y, n.nodeid))
 # with open('basestation.txt', 'w') as bfile:
 #     bfile.write("{} {} {}\n".format(bsx, bsy, 0))
+
+# %%
