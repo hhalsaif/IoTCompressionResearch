@@ -56,9 +56,11 @@ origData = ''.join(format(ord(i), 'b') for i in string)
 origData = np.array(list(origData), dtype=int)
 compressedData = np.array(list(compdata),dtype=int)
 
+print("")
 print ("Normally our code would be of size ", origData.size)
 print ("After compression our code would be of size", compressedData.size)
 print ("Compression ratio is", origData.size/compressedData.size)
+print("")
 
 # %%
 # plotting for better visuals
@@ -88,6 +90,7 @@ arr = calcParityBits(arr, r)
 # Data to be transferred
 arr = np.array(list(arr), dtype=int)
 print("Data transferred is ", arr)
+print("")
 
 #%%
 

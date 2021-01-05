@@ -123,6 +123,7 @@ def monteTransmit(EbNo, transArr):
         """
 
         #calculating the BER
+        #numErrs += hamming_dist(transArr, demodArr)
         numErrs += np.sum(transArr != demodArr)
         BERarr[i] = numErrs/demodArr.size
     
