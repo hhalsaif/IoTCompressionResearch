@@ -95,29 +95,6 @@ def calcParityBits(arr, r):
 	return arr 
 
 #Transmittion
-def transmit(transArr, SNR):
-    numErrs = 0
-    M = 64
-    print(transArr.size)
-    #Simulating data transmission over a channel
-    mod = QAMModem(M)
-    # Stimulate error in transmission by adding gaussian noise
-    modArr = mod.modulate(transArr)
-    recieveArr = awgn(modArr, SNR, rate=2)
-    demodArr = mod.demodulate(recieveArr, 'hard')
-    #calculating the BER
-    print(transArr.size, " and ", demodArr.size)
-    numErrs = np.sum(transArr != demodArr)
-    BER = numErrs/demodArr.size
-    #Plotting and Printing the results
-    plt.semilogy(np.flip(np.arange(SNR)), np.linspace(0, BER, SNR), label = transArr.size)
-    print("The number of errors in our code is ", numErrs)
-    print("Data Transmited is ", transArr)
-    print("Data Recieved is ", demodArr)
-    print("The Bit error ratio is ", BER)
-    print("")
-    return demodArr
-
 def monteTransmit(EbNo, transArr):
     BERarr = [None] * EbNo.size
     M = 256
@@ -152,7 +129,7 @@ def monteTransmit(EbNo, transArr):
     plt.semilogy(EbNo, BERarr, label = transArr.size)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
-    print("Data Recieved is ", recieveArr)
+    print("Data Recieved is ", demodArr)
     print("The Bit error ratio is ", BERarr[i])
     print("")  
     return demodArr

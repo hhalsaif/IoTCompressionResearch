@@ -91,31 +91,16 @@ print("Data transferred is ", arr)
 
 #%%
 
-""" SNR = 10
-plt.xlabel('EbNo(dB)')
-plt.ylabel('BER')
-plt.title('BER vs SNR')
-plt.yscale('log')
-plt.grid(True)
-transmit(origData, SNR)
-recieveArr = transmit(arr, SNR)
-plt.legend()
-plt.savefig('BERSNR_Comparision.png')
-plt.show()
-plt.close() """
-
-
 EbNo = np.arange(0,20)
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
 plt.yscale('log')
-plt.axis([0, 10, 1e-6, 0.1])
 plt.grid(True)
 monteTransmit(EbNo, origData)
 recieveArr = monteTransmit(EbNo, arr)
 plt.legend()
-plt.savefig('BERSNR_Comparision2.png')
+plt.savefig('BERSNR_Comparision.png')
 plt.show()
 plt.close()
 
