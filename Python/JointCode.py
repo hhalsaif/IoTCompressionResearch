@@ -3,18 +3,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import string
-# Importing the tools I need from the commPy library
-from commpy.utilities import hamming_dist
-from commpy.channels import awgn
-from commpy.modulation import PSKModem, Modem
-
 # Importing premade functions that will help clean the code
-from huffman import *
-from hamming import *
+from FuncAndClass import *
 
 # %%
 # huffman code
-sizeOfData = 50000
+sizeOfData = 100000 #np.random.randint(10000,50000)
 symbols = list(string.ascii_uppercase)
 arr = np.random.choice(symbols, sizeOfData) # The code
 string = ""
@@ -95,84 +89,37 @@ arr = calcParityBits(arr, r)
 arr = np.array(list(arr), dtype=int)
 print("Data transferred is ", arr)
 
-# %%
-
-def transmit(transArr, SNR):
-    numErrs = 0
-    print(transArr.size)
-    #Simulating data transmission over a channel
-    mod = PSKModem(transArr.size)
-    # Stimulate error in transmission by adding gaussian noise
-    modArr = mod.modulate(transArr)
-    recieveArr = awgn(modArr, SNR, rate=2)
-    demodArr = mod.demodulate(recieveArr, 'hard')
-    #calculating the BER
-    print(transArr.size, " and ", demodArr.size)
-    numErrs += np.sum(transArr != demodArr)
-    BER = numErrs/demodArr.size
-    #Plotting and Printing the results
-    plt.semilogy(np.flip(np.arange(SNR)), np.linspace(0, BER, SNR), label = transArr.size)
-    print("The number of errors in our code is ", numErrs)
-    print("Data Transmited is ", transArr)
-    print("Data Recieved is ", demodArr)
-    print("The Bit error ratio is ", BER)
-    print("")
-    return demodArr
-
-def monteTransmit(EbNo, transArr):
-    print(transArr.size)
-    BERarr = [None] * EbNo.size
-    for i in EbNo:
-        SNR = EbNo[i]
-        #reset the bit counters
-        numErrs = 0
-        #Simulating data transmission over a channel
-        mod = PSKModem(transArr.size)
-        # Stimulate error in transmission by adding gaussian noise
-        modArr = mod.modulate(transArr)
-        recieveArr = awgn(modArr, SNR, rate=2)
-        demodArr = mod.demodulate(recieveArr, 'hard')
-        #calculating the BER
-        numErrs = np.sum(transArr != demodArr)
-        BERarr[i] = numErrs/demodArr.size
-    plt.semilogy(EbNo, BERarr, label = transArr.size)
-    print("The number of errors in our code is ", numErrs)
-    print("Data Transmited is ", transArr)
-    print("Data Recieved is ", demodArr)
-    print("The Bit error ratio is ", BERarr[i])
-    print("")  
-    return demodArr     
-
 #%%
 
-SNR = 10
+""" SNR = 10
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
 plt.yscale('log')
-plt.axis([0, 10, 1e-6, 0.1])
 plt.grid(True)
 transmit(origData, SNR)
 recieveArr = transmit(arr, SNR)
 plt.legend()
 plt.savefig('BERSNR_Comparision.png')
 plt.show()
-plt.close()
+plt.close() """
 
-"""
-EbNo = np.arange(5)
+
+EbNo = np.arange(0,20)
 plt.xlabel('EbNo(dB)')
 plt.ylabel('BER')
 plt.title('BER vs SNR')
 plt.yscale('log')
+plt.axis([0, 10, 1e-6, 0.1])
 plt.grid(True)
 monteTransmit(EbNo, origData)
-monteTransmit(EbNo, arr)
+recieveArr = monteTransmit(EbNo, arr)
 plt.legend()
 plt.savefig('BERSNR_Comparision2.png')
 plt.show()
 plt.close()
-"""
+
+
 # %%
 # printing out everything and finiding the error
 
