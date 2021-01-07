@@ -35,6 +35,25 @@ def huffman_code_tree(node, left=True, binString=''):
     d.update(huffman_code_tree(r, False, binString + '1'))
     return d
 # Python program to dmeonstrate 
+
+def hammingCoding(data):
+    # Calculate the no of Redundant Bits Required
+    m = len(data)
+    r = calcRedundantBits(m)
+    print("m = ", m)
+    print("r = ", r)
+    # Determine the positions of Redundant Bits
+    arr = posRedundantBits(data, r)
+
+    # Determine the parity bits
+    arr = calcParityBits(arr, r)
+
+    # Data to be transferred
+    arr = np.array(list(arr), dtype=int)
+    print("Data transferred is ", arr)
+    print("")
+    return arr
+
 # hamming code 
 def calcRedundantBits(m): 
 
