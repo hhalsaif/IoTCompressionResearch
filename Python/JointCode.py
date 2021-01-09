@@ -1,4 +1,15 @@
-#%%
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+
+
+
+# In[1]:
+
+
 # Importing general libraries 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,112 +17,124 @@ import string
 # Importing premade functions that will help clean the code
 from FuncAndClass import *
 
-# %%
-# huffman code
-sizeOfData = 100000 #np.random.randint(10000,50000)
-symbols = list(string.ascii_uppercase)
-arr = np.random.choice(symbols, sizeOfData) # The code
-string = ""
-for i in arr:
-    string += i
-#print("Our code is ", string)
-print("")
 
-freq = {}
-# Calculating frequency
-for c in string:
-    if c in freq:
-        freq[c] += 1
-    else:
-        freq[c] = 1
+# In[2]:
 
-freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
-nodes = freq
+for z in range(50):
+    # huffman code
+    sizeOfData = 30000 #np.random.randint(10000,50000)
+    symbols = list(string.ascii_uppercase)
+    arr = np.random.choice(symbols, sizeOfData) # The code
 
-print(freq)
-print()
+    string = ""
+    for i in arr:
+        string += i
+    print("")
+    f = open("string.txt", 'w')
+    f.write('string = ' + string)
+    f.close()
 
-while len(nodes) > 1:
-    (key1, c1) = nodes[-1]
-    (key2, c2) = nodes[-2]
-    nodes = nodes[:-2]
-    node = NodeTree(key1, key2)
-    nodes.append((node, c1 + c2))
-    nodes = sorted(nodes, key=lambda x: x[1], reverse=True) 
+    freq = {}
+    # Calculating frequency
+    for c in string:
+        if c in freq:
+            freq[c] += 1
+        else:
+            freq[c] = 1
 
-huffmanCode = huffman_code_tree(nodes[0][0])
-print(' Char | Huffman code ')
-print('----------------------')
-for (char, frequency) in freq:
-    print(' %-4r |%12s' % (char, huffmanCode[char]))
+    freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+    nodes = freq
 
-compdata = ''
-for char in string:
-   compdata += huffmanCode[char]
- 
-# %%
+    print(freq)
+    print()
 
-# Comparing our compressed code to the normal ASCII code values
-origData = ''.join(format(ord(i), 'b') for i in string)
-origData = np.array(list(origData), dtype=int)
-compressedData = np.array(list(compdata),dtype=int)
+    while len(nodes) > 1:
+        (key1, c1) = nodes[-1]
+        (key2, c2) = nodes[-2]
+        nodes = nodes[:-2]
+        node = NodeTree(key1, key2)
+        nodes.append((node, c1 + c2))
+        nodes = sorted(nodes, key=lambda x: x[1], reverse=True) 
 
-print ("Normally our code would be of size ", origData.size)
-print ("After compression our code would be of size", compressedData.size)
-print ("Compression ratio is", origData.size/compressedData.size)
+    huffmanCode = huffman_code_tree(nodes[0][0])
+    print(' Char | Huffman code ')
+    print('----------------------')
+    for (char, frequency) in freq:
+        print(' %-4r |%12s' % (char, huffmanCode[char]))
 
-# %%
-# plotting for better visuals
-plt.bar('Original Data', origData.size, align='center')
-plt.bar('Compressed Data', compressedData.size, align='center')
-plt.title('Data size before and after compression')
-plt.savefig('HuffmanCode_Comparision.png')
-plt.show()
-plt.close()
-
-# %%
-# hamming code
-
-# Enter the data to be transmitted
-data = compdata
-# Calculate the no of Redundant Bits Required
-m = len(data)
-r = calcRedundantBits(m)
-print("m = ", m)
-print("r = ", r)
-# Determine the positions of Redundant Bits
-arr = posRedundantBits(data, r)
-
-# Determine the parity bits
-arr = calcParityBits(arr, r)
-
-# Data to be transferred
-arr = np.array(list(arr), dtype=int)
-print("Data transferred is ", arr)
-
-#%%
-
-EbNo = np.arange(0,20)
-plt.xlabel('EbNo(dB)')
-plt.ylabel('BER')
-plt.title('BER vs SNR')
-plt.yscale('log')
-plt.grid(True)
-monteTransmit(EbNo, origData)
-recieveArr = monteTransmit(EbNo, arr)
-plt.legend()
-plt.savefig('BERSNR_Comparision.png')
-plt.show()
-plt.close()
+    compdata = ''
+    for char in string:
+        compdata += huffmanCode[char]
 
 
-# %%
-# printing out everything and finiding the error
+    # In[3]:
 
-print("Original Data is", origData)
-print("Data after compressions is", compressedData)
-print("Transmitted data is", arr)
-print("Recieved data is", recieveArr)
-print("")
 
-# %%
+    # Comparing our compressed code to the normal ASCII code values
+    origData = ''.join(format(ord(i), 'b') for i in string)
+    originalData = np.array(list(origData), dtype=int)
+    compressedData = np.array(list(compdata),dtype=int)
+
+    print("")
+    print ("Normally our code would be of size ", originalData.size)
+    print ("After compression our code would be of size", compressedData.size)
+    print ("Compression ratio is", originalData.size/compressedData.size)
+    print("")
+
+
+    # In[4]:
+
+
+    # plotting for better visuals
+    plt.bar('Original Data', originalData.size, align='center')
+    plt.bar('Compressed Data', compressedData.size, align='center')
+    plt.title('Data size before and after compression')
+    plt.savefig('HuffmanCode_Comparision.png')
+    plt.show()
+    plt.close()
+
+
+    # In[5]:
+
+
+    # hamming code
+    JSCData = hammingCoding(compdata)
+    correctedData = hammingCoding(origData)
+
+
+    # In[6]:
+
+
+    EbNo = np.arange(-5,25)
+    plt.xlabel('EbNo(dB)')
+    plt.ylabel('BER')
+    plt.title('BER vs SNR')
+    plt.yscale('log')
+    plt.grid(True)
+    monteTransmit(EbNo, originalData)
+    monteTransmit(EbNo, compressedData)
+    monteTransmit(EbNo, correctedData)
+    recieveArr = monteTransmit(EbNo, JSCData)
+    plt.legend()
+    plt.savefig('BERSNR/BERSNR_Comparision'+str(z)+'.png', format='png')
+    plt.show()
+    plt.close()
+
+
+    # In[ ]:
+
+
+    # printing out everything and finiding the error
+
+    print("Original Data is", originalData)
+    print("Data after compressions is", compressedData)
+    print("Transmitted data is", JSCData)
+    print("Recieved data is", recieveArr)
+    print("")
+
+
+# In[ ]:
+
+
+
+
