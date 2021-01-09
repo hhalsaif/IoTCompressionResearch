@@ -89,7 +89,7 @@ for z in range(50):
     plt.bar('Original Data', originalData.size, align='center')
     plt.bar('Compressed Data', compressedData.size, align='center')
     plt.title('Data size before and after compression')
-    plt.savefig('HuffmanCode_Comparision.png')
+    plt.savefig('HuffComp/HuffmanCode_Comparision'+str(z)+'.png', format='png')
     plt.show()
     plt.close()
 
