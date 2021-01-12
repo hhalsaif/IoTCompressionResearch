@@ -113,22 +113,35 @@ def calcParityBits(arr, r):
 		arr = arr[:n-(2**i)] + str(val) + arr[n-(2**i)+1:] 
 	return arr 
 
+def detectError(arr, nr): 
+    n = len(arr) 
+    res = 0
+  
+    # Calculate parity bits again 
+    for i in range(nr): 
+        val = 0
+        for j in range(1, n + 1): 
+            if(j & (2**i) == (2**i)): 
+                val = val ^ int(arr[-1 * j]) 
+  
+        # Create a binary no by appending 
+        # parity bits together. 
+  
+        res = res + val*(10**i) 
+  
+    # Convert binary to decimal 
+    return int(str(res), 2) 
+
 #Transmittion
 def monteTransmit(EbNo, transArr):
     BERarr = [None] * EbNo.size
-    M = 256
+    M = 64
     for i in range(0, EbNo.size):
         SNR = EbNo[i]
         #reset the bit counters
         numErrs = 0
         #Simulating data transmission over a channel
         mod = QAMModem(M)
-        
-        """
-        transArr = transArr.astype(str)
-        transArr = ''.join(transArr)
-        transArr = int(transArr, 2)
-        """
 
         # Stimulate error in transmission by adding gaussian noise
         modArr = mod.modulate(transArr)
@@ -137,20 +150,19 @@ def monteTransmit(EbNo, transArr):
 
         """
         demodArr = bin(demodArr).replace("0b", "")
-        transArr = np.array(list(transArr), dtype=int)
-        demodArr = np.array(list(demodArr), dtype=int)
+        transArr = np.array(list(transData), dtype=int)
+        demodArr = np.array(list(demodData), dtype=int)
         """
-
         #calculating the BER
         #numErrs += hamming_dist(transArr, demodArr)
         numErrs += np.sum(transArr != demodArr)
         BERarr[i] = numErrs/demodArr.size
-    
     plt.semilogy(EbNo, BERarr, label = transArr.size)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr)
     print("The Bit error ratio is ", BERarr[i])
+    print("The position of error is" + str(detectError(demodArr, transArr)))
     print("")  
     return demodArr
 

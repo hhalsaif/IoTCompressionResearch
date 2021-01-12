@@ -21,22 +21,28 @@ from FuncAndClass import *
 # In[2]:
 
 for z in range(50):
+    print(z)
     # huffman code
-    sizeOfData = 30000 #np.random.randint(10000,50000)
+    '''
+    sizeOfData = np.random.randint(30,550)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
+    '''
+    arr =  ""
+    R = open("Poss/data147.txt", "r")
+    arr = R.read()
 
-    string = ""
+    data = ""
     for i in arr:
-        string += i
+        data += i
     print("")
-    f = open("string.txt", 'w')
-    f.write('string = ' + string)
+    f = open("string/data"+str(z)+".txt", 'w')
+    f.write('data = ' + data)
     f.close()
 
     freq = {}
     # Calculating frequency
-    for c in string:
+    for c in data:
         if c in freq:
             freq[c] += 1
         else:
@@ -63,7 +69,7 @@ for z in range(50):
         print(' %-4r |%12s' % (char, huffmanCode[char]))
 
     compdata = ''
-    for char in string:
+    for char in data:
         compdata += huffmanCode[char]
 
 
@@ -71,7 +77,7 @@ for z in range(50):
 
 
     # Comparing our compressed code to the normal ASCII code values
-    origData = ''.join(format(ord(i), 'b') for i in string)
+    origData = ''.join(format(ord(i), 'b') for i in data)
     originalData = np.array(list(origData), dtype=int)
     compressedData = np.array(list(compdata),dtype=int)
 
@@ -105,15 +111,14 @@ for z in range(50):
     # In[6]:
 
 
-    EbNo = np.arange(-5,25)
+    EbNo = np.arange(-20, 20)
     plt.xlabel('EbNo(dB)')
     plt.ylabel('BER')
     plt.title('BER vs SNR')
-    plt.yscale('log')
     plt.grid(True)
     monteTransmit(EbNo, originalData)
     monteTransmit(EbNo, compressedData)
-    monteTransmit(EbNo, correctedData)
+    # monteTransmit(EbNo, correctedData)
     recieveArr = monteTransmit(EbNo, JSCData)
     plt.legend()
     plt.savefig('BERSNR/BERSNR_Comparision'+str(z)+'.png', format='png')
