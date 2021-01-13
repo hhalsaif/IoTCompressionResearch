@@ -31,7 +31,8 @@ for z in range(50):
     arr =  ""
     R = open("Poss/data147.txt", "r")
     arr = R.read()
-
+    R.close()
+    
     data = ""
     for i in arr:
         data += i
@@ -111,15 +112,15 @@ for z in range(50):
     # In[6]:
 
 
-    EbNo = np.arange(-20, 20)
+    EbNo = np.arange(-10, 20)
     plt.xlabel('EbNo(dB)')
     plt.ylabel('BER')
     plt.title('BER vs SNR')
     plt.grid(True)
     monteTransmit(EbNo, originalData)
-    monteTransmit(EbNo, compressedData)
+    # monteTransmit(EbNo, compressedData)
     # monteTransmit(EbNo, correctedData)
-    recieveArr = monteTransmit(EbNo, JSCData)
+    recieveArr = monteTransmit(EbNo, JSCData, compdata)
     plt.legend()
     plt.savefig('BERSNR/BERSNR_Comparision'+str(z)+'.png', format='png')
     plt.show()

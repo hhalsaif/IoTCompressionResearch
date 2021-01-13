@@ -120,7 +120,7 @@ def detectError(arr, nr):
     # Calculate parity bits again 
     for i in range(nr): 
         val = 0
-        for j in range(0, n): 
+        for j in range(1, n + 1): 
             if(j & (2**i) == (2**i)): 
                 val = val ^ int(arr[-1 * j]) 
   
@@ -130,32 +130,12 @@ def detectError(arr, nr):
         res = res + val*(10**i) 
   
     # Convert binary to decimal 
-    return int(str(res), 2)  
-
-def correctIt(error, data):
-    if data[error-1] == 1:
-        data[error-1] = 0
-    elif data[error-1] == 0:
-        data[error-1] = 1 
-    return data
-
-def removeParity(r, data):
-    for i in range(r):
-        if data[data.size - r]:
-            data = np.delete(data, i)
-    return data
-
-def stringIt(arr):
-    arr = arr.astype(str)
-    arr = tuple(arr)
-    arr = ''.join(arr)
-    return arr
+    return int(str(res), 2) 
 
 #Transmittion
-def monteTransmit(EbNo, transArr, data=0):
+def monteTransmit(EbNo, transArr):
     BERarr = [None] * EbNo.size
     M = 64
-    r = 0
     for i in range(0, EbNo.size):
         SNR = EbNo[i]
         #reset the bit counters
@@ -173,42 +153,16 @@ def monteTransmit(EbNo, transArr, data=0):
         transArr = np.array(list(transData), dtype=int)
         demodArr = np.array(list(demodData), dtype=int)
         """
-        
-        #calculating the BER            
-        
-        """
-        if data!=0:
-            if i == 0: 
-                r =  calcRedundantBits(len(data))    
-            posError = 0
-            posError = detectError(stringIt(demodArr), r)
-            print("The position of error is " + str(posError))
-            print(str(i) + " out of " + str(EbNo.size))
-            decodedData = correctIt(posError, demodArr)
-            decodedData = removeParity(r, decodedData)
-            print("")
-
-            numErrs += np.sum(data != decodedData)
-            BERarr[i] = numErrs/decodedData.size
-            
-            f = open("string/hammingCodes.txt", 'w')
-            f.write('Corrected Data = ' + str(demodArr))
-            f.write('Original Data = ' + str(data))
-            f.close()            
-        else:
-            numErrs += np.sum(transArr != demodArr)
-            BERarr[i] = numErrs/demodArr.size
-        """
-
+        #calculating the BER
+        #numErrs += hamming_dist(transArr, demodArr)
         numErrs += np.sum(transArr != demodArr)
         BERarr[i] = numErrs/demodArr.size
-
     plt.semilogy(EbNo, BERarr, label = transArr.size)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr)
     print("The Bit error ratio is ", BERarr[i])
+    print("The position of error is ", AudioBus
     print("")  
-    
     return demodArr
 
