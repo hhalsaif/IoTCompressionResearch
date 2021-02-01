@@ -127,23 +127,38 @@ def detectError(arr, nr):
         # Create a binary no by appending 
         # parity bits together. 
   
-        res = res + val*(10**i) 
+        res += val*(10**i) 
   
     # Convert binary to decimal 
     return int(str(res), 2)  
 
-def correctIt(error, data):
-    if data[error-1] == 1:
-        data[error-1] = 0
-    elif data[error-1] == 0:
-        data[error-1] = 1 
-    return data
 
-def removeParity(r, data):
-    for i in range(r):
-        if data[data.size - r]:
-            data = np.delete(data, i)
-    return data
+
+def correctIt(error, r, data):    
+    rem = [None] * data.size
+    pos_of_orisig = 0
+    pos_of_redsig = 0
+
+    if error != 0:
+        if data[error-1] == 1:
+            data[error -1] = 0
+        else:
+            data[error-1] = 1
+        
+        for i in range(0, data.size):
+            if i==int(pow(2,pos_of_orisig)-1):
+                pos_of_orisig += 1
+            else:
+                rem[pos_of_redsig]=data[i]
+                pos_of_redsig +=1
+    else:
+        for i in range(0, data.size):
+            if i==int(pow(2,pos_of_orisig)-1):
+                pos_of_orisig += 1
+            else:
+                rem[pos_of_redsig]=data[i]
+                pos_of_redsig +=1
+    return np.array(rem)
 
 def stringIt(arr):
     arr = arr.astype(str)
@@ -176,16 +191,21 @@ def monteTransmit(EbNo, transArr, data=0):
         
         #calculating the BER            
         
-        """
+        
         if data!=0:
-            if i == 0: 
-                r =  calcRedundantBits(len(data))    
+
+            numErrs += np.sum(data != demodArr.size)
+            BERarr[i] = (numErrs-2)/demodArr.size
+
+            """
+            r =  calcRedundantBits(len(data))    
             posError = 0
             posError = detectError(stringIt(demodArr), r)
+            print("The redundant bits are " + str(r))
             print("The position of error is " + str(posError))
+            print("The size of our data is this " + str(demodArr.size))
             print(str(i) + " out of " + str(EbNo.size))
-            decodedData = correctIt(posError, demodArr)
-            decodedData = removeParity(r, decodedData)
+            decodedData = correctIt(posError, r, demodArr)
             print("")
 
             numErrs += np.sum(data != decodedData)
@@ -194,11 +214,12 @@ def monteTransmit(EbNo, transArr, data=0):
             f = open("string/hammingCodes.txt", 'w')
             f.write('Corrected Data = ' + str(demodArr))
             f.write('Original Data = ' + str(data))
-            f.close()            
+            f.close()    
+            """
         else:
             numErrs += np.sum(transArr != demodArr)
             BERarr[i] = numErrs/demodArr.size
-        """
+        
 
         numErrs += np.sum(transArr != demodArr)
         BERarr[i] = numErrs/demodArr.size

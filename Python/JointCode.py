@@ -20,10 +20,10 @@ from FuncAndClass import *
 
 # In[2]:
 
-for z in range(50):
+for z in range(100):
     print(z)
     # huffman code
-    '''
+    
     sizeOfData = np.random.randint(30,550)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
@@ -32,7 +32,7 @@ for z in range(50):
     R = open("Poss/data147.txt", "r")
     arr = R.read()
     R.close()
-    
+    '''
     data = ""
     for i in arr:
         data += i
