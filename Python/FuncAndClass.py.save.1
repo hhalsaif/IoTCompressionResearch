@@ -168,23 +168,16 @@ def stringIt(arr):
 
 #Transmittion
 def monteTransmit(EbNo, transArr, data=0):
+    answer = ""
     BERarr = [None] * EbNo.size
     M = 64
     r = 0
-    answer = ""
     for i in range(0, EbNo.size):
         SNR = EbNo[i]
         #reset the bit counters
         numErrs = 0
         #Simulating data transmission over a channel
         mod = QAMModem(M)
-
-        
-        transArr = transArr.tolist()
-        transArr = int("".join(str(x) for x in transArr), 2) 
-        
-        transArr = bin(transArr).replace("0b", "")
-        transArr = np.array(list(transArr), dtype=int)
 
         # Stimulate error in transmission by adding gaussian noise
         modArr = mod.modulate(transArr)
@@ -193,6 +186,7 @@ def monteTransmit(EbNo, transArr, data=0):
 
         """
         demodArr = bin(demodArr).replace("0b", "")
+        transArr = np.array(list(transData), dtype=int)
         demodArr = np.array(list(demodData), dtype=int)
         """
         
@@ -200,9 +194,10 @@ def monteTransmit(EbNo, transArr, data=0):
         
         
         if data!=0:
-            answer = 'Encoded Data'
+
             numErrs += np.sum(data != demodArr.size)
             BERarr[i] = (numErrs-2)/demodArr.size
+	    answer="Encoded Data"
 
             """
             r =  calcRedundantBits(len(data))    
@@ -224,7 +219,7 @@ def monteTransmit(EbNo, transArr, data=0):
             f.close()    
             """
         else:
-            answer = 'Original Data'
+	    answer  = "Original Data"
             numErrs += np.sum(transArr != demodArr)
             BERarr[i] = numErrs/demodArr.size
         
@@ -232,7 +227,7 @@ def monteTransmit(EbNo, transArr, data=0):
         numErrs += np.sum(transArr != demodArr)
         BERarr[i] = numErrs/demodArr.size
 
-    plt.semilogy(EbNo, BERarr, label=answer)
+    plt.semilogy(EbNo, BERarr, answer)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
     print("Data Recieved is ", demodArr)
