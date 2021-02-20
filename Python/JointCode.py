@@ -20,7 +20,7 @@ from FuncAndClass import *
 
 # In[2]:
 
-for z in range(100):
+for z in range(3):
     print(z)
     # huffman code
     
@@ -33,6 +33,7 @@ for z in range(100):
     R = open("Poss/data147.txt", "r")
     arr = R.read()
     R.close()   
+    
 
     data = ""
     for i in arr:

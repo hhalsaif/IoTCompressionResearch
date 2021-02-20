@@ -179,10 +179,11 @@ def monteTransmit(EbNo, transArr, data=0):
         #Simulating data transmission over a channel
         mod = QAMModem(M)
 
-        
+        #changing our data to a decimal for modulation
         transArr = transArr.tolist()
         transArr = int("".join(str(x) for x in transArr), 2) 
-        
+
+        #Changing our decimal number to a binary this is an exception. You would usually modulate a decimal/hex not a binary.
         transArr = bin(transArr).replace("0b", "")
         transArr = np.array(list(transArr), dtype=int)
 
@@ -201,10 +202,9 @@ def monteTransmit(EbNo, transArr, data=0):
         
         if data!=0:
             answer = 'Encoded Data'
-            numErrs += np.sum(data != demodArr.size)
-            BERarr[i] = (numErrs-2)/demodArr.size
-
-            """
+            data = transArr
+            decodedData = demodArr
+            '''
             r =  calcRedundantBits(len(data))    
             posError = 0
             posError = detectError(stringIt(demodArr), r)
@@ -214,24 +214,20 @@ def monteTransmit(EbNo, transArr, data=0):
             print(str(i) + " out of " + str(EbNo.size))
             decodedData = correctIt(posError, r, demodArr)
             print("")
+            '''
 
             numErrs += np.sum(data != decodedData)
             BERarr[i] = numErrs/decodedData.size
-            
+            '''
             f = open("string/hammingCodes.txt", 'w')
             f.write('Corrected Data = ' + str(demodArr))
             f.write('Original Data = ' + str(data))
             f.close()    
-            """
+            '''
         else:
             answer = 'Original Data'
             numErrs += np.sum(transArr != demodArr)
             BERarr[i] = numErrs/demodArr.size
-        
-
-        numErrs += np.sum(transArr != demodArr)
-        BERarr[i] = numErrs/demodArr.size
-
     plt.semilogy(EbNo, BERarr, label=answer)
     print("The number of errors in our code is ", numErrs)
     print("Data Transmited is ", transArr)
