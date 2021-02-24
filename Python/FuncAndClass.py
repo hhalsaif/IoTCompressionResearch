@@ -202,10 +202,11 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
         
         if data!=[0, 1, 2]:
             answer = 'Encoded Data'
+            '''
             data = transArr
             decodedData = demodArr
             '''
-            r =  calcRedundantBits(len(data))    
+            r =  calcRedundantBits(len(demodArr))    
             posError = 0
             posError = detectError(stringIt(demodArr), r)
             print("The redundant bits are " + str(r))
@@ -214,7 +215,7 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
             print(str(i) + " out of " + str(EbNo.size))
             decodedData = correctIt(posError, r, demodArr)
             print("")
-            '''
+            
 
             numErrs += np.sum(data != decodedData)
             BERarr[i] = numErrs/decodedData.size
