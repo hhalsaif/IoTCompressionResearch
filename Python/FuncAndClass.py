@@ -167,7 +167,7 @@ def stringIt(arr):
     return arr
 
 #Transmittion
-def monteTransmit(EbNo, transArr, data=0):
+def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
     BERarr = [None] * EbNo.size
     M = 64
     r = 0
@@ -200,7 +200,7 @@ def monteTransmit(EbNo, transArr, data=0):
         #calculating the BER            
         
         
-        if data!=0:
+        if data!=[0, 1, 2]:
             answer = 'Encoded Data'
             data = transArr
             decodedData = demodArr
