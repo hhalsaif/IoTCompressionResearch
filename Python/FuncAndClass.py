@@ -188,9 +188,7 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
         transArr = np.array(list(transArr), dtype=int)
 
         # Stimulate error in transmission by adding gaussian noise
-        modArr = mod.modulate(transArr)
-        recieveArr = awgn(modArr, SNR, rate=2)
-        demodArr = mod.demodulate(recieveArr, 'hard')
+        
 
         """
         demodArr = bin(demodArr).replace("0b", "")
@@ -201,8 +199,14 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
         
         
         if data!=[0, 1, 2]:
+            r = calcRedundantBits(len(transArr))
+            modArr = mod.modulate(transArr)
+            # rateHamming = 1 - r/(2^r - 1)
+            rateHamming = 1/2
+            recieveArr = awgn(modArr, SNR, rate=rateHamming)
+            demodArr = mod.demodulate(recieveArr, 'hard')
+
             answer = 'Encoded Data'
-            '''
             data = transArr
             decodedData = demodArr
             '''
@@ -215,7 +219,7 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
             print(str(i) + " out of " + str(EbNo.size))
             decodedData = correctIt(posError, r, demodArr)
             print("")
-            
+            '''
 
             numErrs += np.sum(data != decodedData)
             BERarr[i] = numErrs/decodedData.size
@@ -226,6 +230,9 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
             f.close()    
             '''
         else:
+            modArr = mod.modulate(transArr)
+            recieveArr = awgn(modArr, SNR, rate=1)
+            demodArr = mod.demodulate(recieveArr, 'hard')
             answer = 'Original Data'
             numErrs += np.sum(transArr != demodArr)
             BERarr[i] = numErrs/demodArr.size

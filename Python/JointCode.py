@@ -2,11 +2,6 @@
 # coding: utf-8
 
 # In[ ]:
-
-
-
-
-
 # In[1]:
 
 
@@ -25,7 +20,7 @@ for z in range(3):
     # huffman code
     
     '''
-    sizeOfData = np.random.randint(30,550)
+    sizeOfData = np.random.randint(30,100)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     '''
@@ -118,6 +113,7 @@ for z in range(3):
     plt.xlabel('EbNo(dB)')
     plt.ylabel('BER')
     plt.title('BER vs SNR')
+    plt.yscale('log')
     plt.grid(True)
     monteTransmit(EbNo, originalData)
     # monteTransmit(EbNo, compressedData)
