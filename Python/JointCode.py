@@ -4,6 +4,7 @@
 # Importing general libraries 
 import matplotlib.pyplot as plt
 import numpy as np
+from commpy.channelcoding import *
 import string
 # Importing premade functions that will help clean the code
 from FuncAndClass import *
@@ -43,7 +44,9 @@ for z in range(3):
 
     # hamming code
     JSCData = hammingCoding(compData)
-    correctedData = hammingCoding(origData)
+    convData = compData.conv_encode()
+    turboData = turbo_encode(compData, trellis1, trellis2, interleaver)
+    LDPCData = get_ldpc_code_params(compData)
 
     EbNo = np.arange(-10, 20)
     plt.xlabel('EbNo(dB)')
@@ -54,8 +57,12 @@ for z in range(3):
 
     monteTransmit(EbNo, np.array(list(origData),dtype=int))
     # monteTransmit(EbNo, correctedData)
-    recieveArr = monteTransmit(EbNo, JSCData, compData)
-    
+    recieveArr = monteTransmit(EbNo, JSCData, compData, 1)
+    recieveArr = monteTransmit(EbNo, convData, compData, 2)
+    recieveArr = monteTransmit(EbNo, turboData, compData, 3)
+    recieveArr = monteTransmit(EbNo, LDPCData, compData, 4)
+
+
     plt.legend()
     plt.savefig('BERSNR/BERSNR_Comparision'+str(z)+'.png', format='png')
     plt.show()

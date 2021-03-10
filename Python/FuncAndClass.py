@@ -219,7 +219,7 @@ def stringIt(arr):
     return arr
 
 #Transmittion
-def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
+def monteTransmit(EbNo, transArr, sourceData, code):
     BERarr = [None] * EbNo.size
     M = 64
     r = 0
@@ -240,7 +240,8 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
         transArr = np.array(list(transArr), dtype=int)
 
         # Stimulate error in transmission by adding gaussian noise
-        
+        modArr = mod.modulate(transArr)
+
 
         """
         demodArr = bin(demodArr).replace("0b", "")
@@ -250,7 +251,7 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
         #calculating the BER            
         
         
-        if data!=[0, 1, 2]:
+        if code == 1:
             r = calcRedundantBits(len(transArr))
             modArr = mod.modulate(transArr)
             # rateHamming = 1 - r/(2^r - 1)
@@ -258,7 +259,7 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
             recieveArr = awgn(modArr, SNR, rate=rateHamming)
             demodArr = mod.demodulate(recieveArr, 'hard')
 
-            answer = 'Encoded Data'
+            answer = 'Hamming Encoded'
             data = transArr
             decodedData = demodArr
             '''
@@ -281,8 +282,34 @@ def monteTransmit(EbNo, transArr, data=[0, 1, 2]):
             f.write('Original Data = ' + str(data))
             f.close()    
             '''
+        elif code == 2:
+            rateConventional = 
+            recieveArr = awgn(modArr, SNR, rate = rateConventional)
+            demodArr = mod.demodulate(recieveArr, 'hard')
+            answer = 'Conventional encoded'
+            decodedData = demodArr.viterbi_decode(coded_bits, trellis, tb_depth=None, decoding_type='hard')
+            numErrs += np.sum(sourceData != decodedData)
+            BERarr[i] = numErrs/decodedData.size
+
+        elif code == 3:
+            rateTurbo = 
+            recieveArr = awgn(modArr, SNR, rate = rateTurbo)
+            demodArr = mod.demodulate(recieveArr, 'hard')
+            answer = 'Turbo encoded'
+            map_decode(sys_symbols, non_sys_symbols, trellis, noise_variance, L_int, mode='decode')
+            decodedData = dturbo_decode(sys_symbols, non_sys_symbols_1, non_sys_symbols_2, trellis, noise_variance, number_iterations, interleaver, L_int=None)
+            numErrs += np.sum(sourceData != decodedData)
+            BERarr[i] = numErrs/decodedData.size
+        elif code == 4:
+            rateLDPC = 
+            recieveArr = awgn(modArr, SNR, rate = rateLDPC)
+            demodArr = mod.demodulate(recieveArr, 'hard')
+            answer = 'LDPC encoded'
+            decodedData = ldpc_bp_decode(demodArr, ldpc_code_params, decoder_algorithm, n_iters)
+            numErrs += np.sum(sourceData != decodedData)
+            BERarr[i] = numErrs/decodedData.size
+
         else:
-            modArr = mod.modulate(transArr)
             recieveArr = awgn(modArr, SNR, rate=1)
             demodArr = mod.demodulate(recieveArr, 'hard')
             answer = 'Original Data'
