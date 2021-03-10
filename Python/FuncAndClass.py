@@ -4,6 +4,7 @@ import numpy as np
 # Importing the tools need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
+from commpy.channelcoding import *
 from commpy.modulation import QAMModem, Modem
 
 # Huffman Coding in python
@@ -35,6 +36,57 @@ def huffman_code_tree(node, left=True, binString=''):
     d.update(huffman_code_tree(r, False, binString + '1'))
     return d
 # Python program to dmeonstrate 
+
+def huffComp(arr, z):
+    data = ""
+    for i in arr:
+        data += i
+    print("")
+    f = open("string/data"+str(z)+".txt", 'w')
+    f.write('data = ' + data)
+    f.close()
+
+    freq = {}
+    # Calculating frequency
+    for c in data:
+        if c in freq:
+            freq[c] += 1
+        else:
+            freq[c] = 1
+
+    freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+    nodes = freq
+
+    print(freq)
+    print()
+
+    while len(nodes) > 1:
+        (key1, c1) = nodes[-1]
+        (key2, c2) = nodes[-2]
+        nodes = nodes[:-2]
+        node = NodeTree(key1, key2)
+        nodes.append((node, c1 + c2))
+        nodes = sorted(nodes, key=lambda x: x[1], reverse=True) 
+
+    huffmanCode = huffman_code_tree(nodes[0][0])
+    print(' Char | Huffman code ')
+    print('----------------------')
+    for (char, frequency) in freq:
+        print(' %-4r |%12s' % (char, huffmanCode[char]))
+
+    compdata = ''
+    for char in data:
+        compdata += huffmanCode[char]
+
+    # Comparing our compressed code to the normal ASCII code values
+    return compdata
+
+def binText(arr):
+    data = ""
+    for i in arr:
+        data += i
+    origData = ''.join(format(ord(i), 'b') for i in data)
+    return origData
 
 def hammingCoding(data):
     # Calculate the no of Redundant Bits Required
