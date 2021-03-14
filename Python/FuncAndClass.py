@@ -1,12 +1,16 @@
 #libraries
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+import zlib
+
 # Importing the tools need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
 from commpy.channelcoding import *
 from commpy.modulation import QAMModem, Modem
-
+from sys import argv
+from struct import *
 # Huffman Coding in python
 
 # Creating tree nodes
@@ -35,17 +39,19 @@ def huffman_code_tree(node, left=True, binString=''):
     d.update(huffman_code_tree(l, True, binString + '0'))
     d.update(huffman_code_tree(r, False, binString + '1'))
     return d
-# Python program to dmeonstrate 
-
+    
+# Python program to demonstrate Huffman COmpression
 def huffComp(arr, z):
     data = ""
     for i in arr:
         data += i
     print("")
+    '''
     f = open("string/data"+str(z)+".txt", 'w')
     f.write('data = ' + data)
     f.close()
-
+    '''
+    
     freq = {}
     # Calculating frequency
     for c in data:
@@ -80,6 +86,127 @@ def huffComp(arr, z):
 
     # Comparing our compressed code to the normal ASCII code values
     return compdata
+
+# Function for LZW Compression
+def LZWEnc(arr):
+    # Building and initializing the dictionary.
+    dictionary_size = 256                   
+    dictionary = {chr(i): i for i in range(dictionary_size)}    
+
+    # We'll start off our phrase as empty and add characters to it as we encounter them
+    phrase = ""         
+
+    # This will store the sequence of codes we'll eventually write to disk 
+    compressed_data = []
+
+    # Load the text             
+    data = input_file.read()
+
+    # Iterating through the input text character by character
+    for symbol in data:                     
+        # Get input symbol.
+        string_plus_symbol = phrase + symbol 
+        
+        # If we have a match, we'll skip over it
+        # This is how we build up to support larger phrases
+        if string_plus_symbol in dictionary: 
+            phrase = string_plus_symbol
+        else:
+            # We'll add the existing phrase (without the breaking character) to our output
+            compressed_data.append(dictionary[phrase])
+            
+            # We'll create a new code (if space permits)
+            if(len(dictionary) <= maximum_table_size):
+                dictionary[string_plus_symbol] = dictionary_size
+                dictionary_size += 1
+            phrase = symbol
+
+    if phrase in dictionary:
+        compressed_data.append(dictionary[phrase])
+
+    # Storing the compressed string into a file (byte-wise).
+    out = input_file_name.split(".")[0]
+    output_file = open(out + ".lzw", "wb")
+    
+    for data in compressed_data:
+        # Saves the code as an unsigned short
+        output_file.write(pack('>H',int(data)))
+        
+    output_file.close()
+    input_file.close()
+
+def LZWDec():
+    # Default values in order to read the compressed file
+    compressed_data = []
+    next_code = 256
+    decompressed_data = ""
+    phrase = ""
+
+    # Reading the compressed file.
+    while True:
+        rec = file.read(2)
+        if len(rec) != 2:
+            break
+        (data, ) = unpack('>H', rec)
+        compressed_data.append(data)
+
+    # Building and initializing the dictionary.
+    dictionary_size = 256
+    dictionary = dict([(x, chr(x)) for x in range(dictionary_size)])
+
+    # Iterating through the codes.
+    # LZW Decompression algorithm
+    for code in compressed_data:
+        
+        # If we find a new 
+        if not (code in dictionary):
+            dictionary[code] = phrase + (phrase[0])
+        
+        decompressed_data += dictionary[code]
+        
+        if not(len(phrase) == 0):
+            # Ensures we don't exceed the bounds of the table
+            if(len(dictionary) <= maximum_table_size):
+                dictionary[next_code] = phrase + (dictionary[code][0])
+                next_code += 1
+        phrase = dictionary[code]
+
+    # storing the decompressed string into a file.
+    out = input_file_name.split(".")[0]
+    output_file = open(out + "_decoded.txt", "w")
+    for data in decompressed_data:
+        output_file.write(data)
+        
+    output_file.close()
+    file.close()
+
+def deflate(data, compresslevel=9):
+    compress = zlib.compressobj(
+            compresslevel,        # level: 0-9
+            zlib.DEFLATED,        # method: must be DEFLATED
+            -zlib.MAX_WBITS,      # window size in bits:
+                                  #   -15..-8: negate, suppress header
+                                  #   8..15: normal
+                                  #   16..30: subtract 16, gzip header
+            zlib.DEF_MEM_LEVEL,   # mem level: 1..8/9
+            0                     # strategy:
+                                  #   0 = Z_DEFAULT_STRATEGY
+                                  #   1 = Z_FILTERED
+                                  #   2 = Z_HUFFMAN_ONLY
+                                  #   3 = Z_RLE
+                                  #   4 = Z_FIXED
+    )
+    deflated = compress.compress(data)
+    deflated += compress.flush()
+    return deflated
+
+def inflate(data):
+    decompress = zlib.decompressobj(
+            -zlib.MAX_WBITS  # see above
+    )
+    inflated = decompress.decompress(data)
+    inflated += decompress.flush()
+    return inflated
 
 def binText(arr):
     data = ""
@@ -282,32 +409,34 @@ def monteTransmit(EbNo, transArr, sourceData, code):
             f.write('Original Data = ' + str(data))
             f.close()    
             '''
+
         elif code == 2:
-            rateConventional = 
-            recieveArr = awgn(modArr, SNR, rate = rateConventional)
+            rateLDPC = len(sourceData)/len(demodArr)
+            recieveArr = awgn(modArr, SNR, rate = rateLDPC)
             demodArr = mod.demodulate(recieveArr, 'hard')
-            answer = 'Conventional encoded'
-            decodedData = demodArr.viterbi_decode(coded_bits, trellis, tb_depth=None, decoding_type='hard')
+            answer = 'LDPC encoded'
+            decodedData = ldpc_bp_decode(demodArr, sourceData, decoder_algorithm = SPA, n_iters = 100)
             numErrs += np.sum(sourceData != decodedData)
             BERarr[i] = numErrs/decodedData.size
 
         elif code == 3:
-            rateTurbo = 
+            rateConvolutional = 1/2
+            recieveArr = awgn(modArr, SNR, rate = rateConvolutional)
+            demodArr = mod.demodulate(recieveArr, 'hard')
+            answer = 'Convolutional encoded'
+            decodedData = demodArr.viterbi_decode(coded_bits, trellis, tb_depth=None, decoding_type='hard')
+            numErrs += np.sum(sourceData != decodedData)
+            BERarr[i] = numErrs/decodedData.size
+
+        elif code == 4:
+            rateTurbo = 1/2
             recieveArr = awgn(modArr, SNR, rate = rateTurbo)
             demodArr = mod.demodulate(recieveArr, 'hard')
             answer = 'Turbo encoded'
             map_decode(sys_symbols, non_sys_symbols, trellis, noise_variance, L_int, mode='decode')
             decodedData = dturbo_decode(sys_symbols, non_sys_symbols_1, non_sys_symbols_2, trellis, noise_variance, number_iterations, interleaver, L_int=None)
             numErrs += np.sum(sourceData != decodedData)
-            BERarr[i] = numErrs/decodedData.size
-        elif code == 4:
-            rateLDPC = 
-            recieveArr = awgn(modArr, SNR, rate = rateLDPC)
-            demodArr = mod.demodulate(recieveArr, 'hard')
-            answer = 'LDPC encoded'
-            decodedData = ldpc_bp_decode(demodArr, ldpc_code_params, decoder_algorithm, n_iters)
-            numErrs += np.sum(sourceData != decodedData)
-            BERarr[i] = numErrs/decodedData.size
+            BERarr[i] = numErrs/decodedData.size           
 
         else:
             recieveArr = awgn(modArr, SNR, rate=1)
