@@ -42,9 +42,7 @@ def huffman_code_tree(node, left=True, binString=''):
     
 # Python program to demonstrate Huffman COmpression
 def huffComp(arr, z):
-    data = ""
-    for i in arr:
-        data += i
+    data = arr
     print("")
     '''
     f = open("string/data"+str(z)+".txt", 'w')
@@ -88,7 +86,8 @@ def huffComp(arr, z):
     return compdata
 
 # Function for LZW Compression
-def LZWEnc(arr):
+def LZWEnc(strData, code_width=12):
+    maximum_table_size = pow(2,int(code_width))
     # Building and initializing the dictionary.
     dictionary_size = 256                   
     dictionary = {chr(i): i for i in range(dictionary_size)}    
@@ -100,8 +99,7 @@ def LZWEnc(arr):
     compressed_data = []
 
     # Load the text             
-    data = input_file.read()
-
+    data = strData
     # Iterating through the input text character by character
     for symbol in data:                     
         # Get input symbol.
@@ -125,17 +123,22 @@ def LZWEnc(arr):
         compressed_data.append(dictionary[phrase])
 
     # Storing the compressed string into a file (byte-wise).
-    out = input_file_name.split(".")[0]
-    output_file = open(out + ".lzw", "wb")
+    out = data.split(".")[0]
+    output_file = open("LZW/" + out + ".lzw", "wb")
     
-    for data in compressed_data:
+    encodedLZW=''
+    for data in compressed_data: 
         # Saves the code as an unsigned short
         output_file.write(pack('>H',int(data)))
-        
+        encodedLZW += pack('>H',int(data))
     output_file.close()
-    input_file.close()
+    print(encodedLZW)
+    print("")
+    return encodedLZW        
 
-def LZWDec():
+def LZWDec(strData, code_width=12):
+    maximum_table_size = pow(2,int(code_width))
+    data = strData
     # Default values in order to read the compressed file
     compressed_data = []
     next_code = 256
@@ -172,13 +175,15 @@ def LZWDec():
         phrase = dictionary[code]
 
     # storing the decompressed string into a file.
+    decodedLZW = ''
     out = input_file_name.split(".")[0]
     output_file = open(out + "_decoded.txt", "w")
     for data in decompressed_data:
         output_file.write(data)
-        
+        decodedLZW += data
     output_file.close()
     file.close()
+    return decodedLZW
 
 def deflate(data, compresslevel=9):
     compress = zlib.compressobj(

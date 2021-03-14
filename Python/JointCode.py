@@ -9,7 +9,6 @@ import string
 # Importing premade functions that will help clean the code
 from FuncAndClass import *
 
-
 for z in range(3):
     print(z)
     # huffman code
@@ -25,28 +24,35 @@ for z in range(3):
     arr = R.read()
     R.close()   
     '''
-
-    huffData = huffComp(arr, z)
-    origData = binText(arr)
-    LZWData = LZWEnc(arr)
-    infData = Deflate(arr)
+    
+    strData = ""
+    for i in arr:
+        strData += i
+        
+    origData = binText(strData)
+    huffData = huffComp(strData, z)
+    LZWData = LZWEnc(strData)
+    # infData = Deflate(strData)
+    infData = LZWData
 
     sourceCodes = [origData, huffData, LZWData, infData]
     sourceNames = ["Original Data", "Huffman Compression", "LZW Compression", "Inflate/Deflate Compression"]
 
+    
+    print ("Normally our code would be of size ", len(origData))
     for i in range(0, len(sourceCodes)):
-        print("")
-        print ("Normally our code would be of size ", len(origData))
         print ("Using ", sourceNames[i],  len(sourceCodes[i]))
         print ("Compression ratio of " , len(origData)/len(sourceCodes[i]))
+        print(sourceCodes[i])
         print("")
         # plotting for better visuals
-        plt.bar(sourceNames[i], len(sourceCodes[i], align='center'))
+        plt.bar(sourceNames[i], len(sourceCodes[i]), align='center')
         plt.title('Data size comparision')
         plt.savefig('CompSize/Source_Comparision'+str(z)+'.png', format='png')
     plt.show()
     plt.close()
-
+    
+    print(LZWDec(sourceCodes[2]))
     
     '''
      for i in range(0, len(sourceCodes)):
