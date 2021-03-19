@@ -29,8 +29,8 @@ for z in range(3):
     for i in arr:
         strData += i
     origData = binText(strData)
-    huffData = huffComp(strData, z)
-    print(huffDec(root, huffData))
+    huffData, root = huffComp(strData, z)
+    print(huffDec(huffData, root))
     # LZWData = LZWEnc(strData)
     # infData = Deflate(strData)
     # infData = LZWData

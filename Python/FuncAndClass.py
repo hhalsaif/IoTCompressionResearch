@@ -47,8 +47,7 @@ def huffman_code_tree(node, left=True, binString=''):
     return d
     
 # Python program to demonstrate Huffman COmpression
-def huffComp(arr, z):
-    data = arr
+def huffComp(data, z):
     print("")
     
     freq = {}
@@ -73,19 +72,21 @@ def huffComp(arr, z):
         nodes.append((node, c1 + c2))
         nodes = sorted(nodes, key=lambda x: x[1], reverse=True) 
 
+    f = open("huffdict/dictionary"+str(z)+".txt", 'w')
     huffmanCode = huffman_code_tree(nodes[0][0])
     print(' Char | Huffman code ')
     print('----------------------')
-    for (char, frequency) in freq:
+    for char in freq:
         print(' %-4r |%12s' % (char, huffmanCode[char]))
+        f.write(' %-4r |%12s' % (char, huffmanCode[char]))
+    f.close()
     
     compdata = ''
     for char in data:
         compdata += huffmanCode[char]
-    # Comparing our compressed code to the normal ASCII code values
-    return compdata
+    return compdata, huffmanCode[len(data)]
 
-def huffDec(root, data):
+def huffDec(data, root):
 	#Enter Your Code Here
     cur = root
     chararray = []
@@ -103,8 +104,7 @@ def huffDec(root, data):
             cur = root
     
     #Print final array
-    print("".join(chararray))
-
+    return("".join(chararray))
 
 # Function for LZW Compression
 def LZWEnc(strData, code_width=12):
