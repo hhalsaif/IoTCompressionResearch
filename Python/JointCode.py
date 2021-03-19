@@ -13,7 +13,7 @@ for z in range(3):
     print(z)
     # huffman code
 
-    
+    '''
     sizeOfData = np.random.randint(10,100)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
@@ -23,22 +23,21 @@ for z in range(3):
     R = open("DoneImages/data147.txt", "r")
     arr = R.read()
     R.close()   
-    '''
+    
     
     strData = ""
     for i in arr:
         strData += i
-        
     origData = binText(strData)
     huffData = huffComp(strData, z)
-    LZWData = LZWEnc(strData)
+    print(huffDec(root, huffData))
+    # LZWData = LZWEnc(strData)
     # infData = Deflate(strData)
-    infData = LZWData
+    # infData = LZWData
 
-    sourceCodes = [origData, huffData, LZWData, infData]
-    sourceNames = ["Original Data", "Huffman Compression", "LZW Compression", "Inflate/Deflate Compression"]
+    sourceCodes = [origData, huffData ]# , LZWData, infData]
+    sourceNames = ["Original Data", "Huffman Compression" ]#, "LZW Compression", "Inflate/Deflate Compression"]
 
-    
     print ("Normally our code would be of size ", len(origData))
     for i in range(0, len(sourceCodes)):
         print ("Using ", sourceNames[i],  len(sourceCodes[i]))
@@ -47,19 +46,19 @@ for z in range(3):
         print("")
         # plotting for better visuals
         plt.bar(sourceNames[i], len(sourceCodes[i]), align='center')
-        plt.title('Data size comparision')
-        plt.savefig('CompSize/Source_Comparision'+str(z)+'.png', format='png')
+        plt.title('Data size comparison')
+        plt.savefig('CompSize/Source_Comparison'+str(z)+'.png', format='png')
     plt.show()
     plt.close()
     
-    print(LZWDec(sourceCodes[2]))
+    # print(LZWDec(sourceCodes[2]))
     
-    '''
-     for i in range(0, len(sourceCodes)):
+    
+    for i in range(1, len(sourceCodes)):
         # hamming code
-        JSCData = hammingCoding(comparision)
-        LDPCData = get_ldpc_code_params(sourceCodes[i])
-
+        JSCData = hammingCoding(sourceCodes[i])
+        
+        #LDPCData = get_ldpc_code_params(sourceCodes[i])
         # classTrellis(memory, g_matrix, feedback=0, code_type='default')
         # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
         # turboData = turbo_encode(sourceCodes[i], trellis1, trellis2, interleaver)
@@ -71,19 +70,18 @@ for z in range(3):
         plt.yscale('log')
         plt.grid(True)
 
-        monteTransmit(EbNo, np.array(list(origData),dtype=int))
-        recieveArr = monteTransmit(EbNo, JSCData, sourceCodes[i], 1)
-        recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
-
+        monteTransmit(EbNo, np.array(list(origData),dtype=int), origData)
+        recieveArr = monteTransmit(EbNo, JSCData, origData, 1)
+        
+        #recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
         # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)
         # recieveArr = monteTransmit(EbNo, turboData, sourceCodes[i], 4)
-
     plt.legend()
-    plt.savefig('BERSNR/BERSNR_Comparision'+str(z)+'.png', format='png')
+    plt.savefig('BERSNR/BERSNR_Comparison'+str(z)+'.png', format='png')
     plt.show()
     plt.close()
     print("")
-    '''
+    
 
 # In[ ]:
 

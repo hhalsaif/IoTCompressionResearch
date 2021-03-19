@@ -29,6 +29,12 @@ class NodeTree(object):
     def __str__(self):
         return '%s_%s' % (self.left, self.right)
 
+class Node:
+    def __init__(self, freq,data):
+        self.freq= freq
+        self.data=data
+        self.left = None
+        self.right = None
 
 # Main function implementing huffman coding
 def huffman_code_tree(node, left=True, binString=''):
@@ -44,11 +50,6 @@ def huffman_code_tree(node, left=True, binString=''):
 def huffComp(arr, z):
     data = arr
     print("")
-    '''
-    f = open("string/data"+str(z)+".txt", 'w')
-    f.write('data = ' + data)
-    f.close()
-    '''
     
     freq = {}
     # Calculating frequency
@@ -77,13 +78,33 @@ def huffComp(arr, z):
     print('----------------------')
     for (char, frequency) in freq:
         print(' %-4r |%12s' % (char, huffmanCode[char]))
-
+    
     compdata = ''
     for char in data:
         compdata += huffmanCode[char]
-
     # Comparing our compressed code to the normal ASCII code values
     return compdata
+
+def huffDec(root, data):
+	#Enter Your Code Here
+    cur = root
+    chararray = []
+    #For each character, 
+    #If at an internal node, move left if 0, right if 1
+    #If at a leaf (no children), record data and jump back to root AFTER processing character
+    for char in data:
+        if char == '0' and cur.left:
+            cur = cur.left
+        elif cur.right:
+            cur = cur.right
+        
+        if cur.left is None and cur.right is None:
+            chararray.append(cur.data)
+            cur = root
+    
+    #Print final array
+    print("".join(chararray))
+
 
 # Function for LZW Compression
 def LZWEnc(strData, code_width=12):
@@ -351,7 +372,7 @@ def stringIt(arr):
     return arr
 
 #Transmittion
-def monteTransmit(EbNo, transArr, sourceData, code):
+def monteTransmit(EbNo, transArr, sourceData, code=0):
     BERarr = [None] * EbNo.size
     M = 64
     r = 0
@@ -384,17 +405,14 @@ def monteTransmit(EbNo, transArr, sourceData, code):
         
         
         if code == 1:
+            answer = 'Hamming Encoded'
             r = calcRedundantBits(len(transArr))
             modArr = mod.modulate(transArr)
-            # rateHamming = 1 - r/(2^r - 1)
-            rateHamming = 1/2
+            rateHamming = 1 - r/(2^r - 1)
+            # rateHamming = 1/2
             recieveArr = awgn(modArr, SNR, rate=rateHamming)
             demodArr = mod.demodulate(recieveArr, 'hard')
-
-            answer = 'Hamming Encoded'
-            data = transArr
-            decodedData = demodArr
-            '''
+            
             r =  calcRedundantBits(len(demodArr))    
             posError = 0
             posError = detectError(stringIt(demodArr), r)
@@ -402,12 +420,11 @@ def monteTransmit(EbNo, transArr, sourceData, code):
             print("The position of error is " + str(posError))
             print("The size of our data is this " + str(demodArr.size))
             print(str(i) + " out of " + str(EbNo.size))
-            decodedData = correctIt(posError, r, demodArr)
+            # decodedData = correctIt(posError, r, demodArr)
             print("")
-            '''
-
-            numErrs += np.sum(data != decodedData)
-            BERarr[i] = numErrs/decodedData.size
+        
+            # numErrs += np.sum(transArr != decodedData)
+            # BERarr[i] = numErrs/decodedData.size
             '''
             f = open("string/hammingCodes.txt", 'w')
             f.write('Corrected Data = ' + str(demodArr))
