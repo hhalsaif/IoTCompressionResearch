@@ -29,8 +29,20 @@ for z in range(3):
     for i in arr:
         strData += i
     origData = binText(strData)
-    huffData, root = huffComp(strData, z)
-    print(huffDec(huffData, root))
+    huffData = huffComp(strData, z)
+    
+    decHuff = ''
+    for (char, frequency) in calcFreq(strData): 
+        root = Node(frequency, char)
+        decHuff += huffDec(huffData, root)
+    print("Is it decoding correctly?")
+    print(np.sum(decHuff != huffData))
+    f = open('Before_After.txt', 'w')
+    f.write ('Original Data = ' + str(origData))
+    f.write ('Comp Data = ' + str(huffData))
+    f.write ('unComp Data = ' +  str(decHuff))
+    f.close()
+
     # LZWData = LZWEnc(strData)
     # infData = Deflate(strData)
     # infData = LZWData
@@ -42,7 +54,6 @@ for z in range(3):
     for i in range(0, len(sourceCodes)):
         print ("Using ", sourceNames[i],  len(sourceCodes[i]))
         print ("Compression ratio of " , len(origData)/len(sourceCodes[i]))
-        print(sourceCodes[i])
         print("")
         # plotting for better visuals
         plt.bar(sourceNames[i], len(sourceCodes[i]), align='center')
@@ -71,9 +82,9 @@ for z in range(3):
         plt.grid(True)
 
         monteTransmit(EbNo, np.array(list(origData),dtype=int), origData)
-        recieveArr = monteTransmit(EbNo, JSCData, origData, 1)
+        recieveArr = monteTransmit(EbNo, JSCData, sourceCodes[i], root, 1)
         
-        #recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
+        # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
         # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)
         # recieveArr = monteTransmit(EbNo, turboData, sourceCodes[i], 4)
     plt.legend()

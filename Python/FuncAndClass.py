@@ -30,7 +30,7 @@ class NodeTree(object):
         return '%s_%s' % (self.left, self.right)
 
 class Node:
-    def __init__(self, freq,data):
+    def __init__(self,freq,data):
         self.freq= freq
         self.data=data
         self.left = None
@@ -46,19 +46,11 @@ def huffman_code_tree(node, left=True, binString=''):
     d.update(huffman_code_tree(r, False, binString + '1'))
     return d
     
-# Python program to demonstrate Huffman COmpression
-def huffComp(data, z):
+# Python program to demonstrate Huffman Compression
+def huffComp(arr, z):
     print("")
     
-    freq = {}
-    # Calculating frequency
-    for c in data:
-        if c in freq:
-            freq[c] += 1
-        else:
-            freq[c] = 1
-
-    freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+    freq = calcFreq(arr)
     nodes = freq
 
     print(freq)
@@ -72,19 +64,28 @@ def huffComp(data, z):
         nodes.append((node, c1 + c2))
         nodes = sorted(nodes, key=lambda x: x[1], reverse=True) 
 
-    f = open("huffdict/dictionary"+str(z)+".txt", 'w')
     huffmanCode = huffman_code_tree(nodes[0][0])
     print(' Char | Huffman code ')
     print('----------------------')
-    for char in freq:
-        print(' %-4r |%12s' % (char, huffmanCode[char]))
-        f.write(' %-4r |%12s' % (char, huffmanCode[char]))
-    f.close()
-    
+    for (char, frequency) in freq: 
+	    print('%-4r |%12s' % (char, huffmanCode[char]))
     compdata = ''
-    for char in data:
+    for char in arr:
         compdata += huffmanCode[char]
-    return compdata, huffmanCode[len(data)]
+    return compdata
+
+def calcFreq(data):
+    freq = {}
+    # Calculating frequency
+    for c in data:
+        if c in freq:
+            freq[c] += 1
+        else:
+            freq[c] = 1
+
+    freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+    return freq
+
 
 def huffDec(data, root):
 	#Enter Your Code Here
@@ -372,7 +373,7 @@ def stringIt(arr):
     return arr
 
 #Transmittion
-def monteTransmit(EbNo, transArr, sourceData, code=0):
+def monteTransmit(EbNo, transArr, sourceData, root=0, code=0):
     BERarr = [None] * EbNo.size
     M = 64
     r = 0
@@ -421,6 +422,7 @@ def monteTransmit(EbNo, transArr, sourceData, code=0):
             print("The size of our data is this " + str(demodArr.size))
             print(str(i) + " out of " + str(EbNo.size))
             # decodedData = correctIt(posError, r, demodArr)
+            sourceData = huffDec(decodedData, root)
             print("")
         
             # numErrs += np.sum(transArr != decodedData)
