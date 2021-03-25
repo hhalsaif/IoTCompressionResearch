@@ -30,7 +30,7 @@ class NodeTree(object):
         return '%s_%s' % (self.left, self.right)
 
 class Node:
-    def __init__(self,freq,data):
+    def __init__(self, freq,data):
         self.freq= freq
         self.data=data
         self.left = None
@@ -46,11 +46,10 @@ def huffman_code_tree(node, left=True, binString=''):
     d.update(huffman_code_tree(r, False, binString + '1'))
     return d
     
-# Python program to demonstrate Huffman Compression
-def huffComp(arr, z):
+# Python program to demonstrate Huffman COmpression
+def huffComp(data, z):
     print("")
-    
-    freq = calcFreq(arr)
+    freq = calcFreq(data)
     nodes = freq
 
     print(freq)
@@ -67,10 +66,10 @@ def huffComp(arr, z):
     huffmanCode = huffman_code_tree(nodes[0][0])
     print(' Char | Huffman code ')
     print('----------------------')
-    for (char, frequency) in freq: 
-	    print('%-4r |%12s' % (char, huffmanCode[char]))
+    for (char, frequency) in freq:
+        print(' %-4r |%12s' % (char, huffmanCode[char]))
     compdata = ''
-    for char in arr:
+    for char in data:
         compdata += huffmanCode[char]
     return compdata
 
@@ -85,7 +84,6 @@ def calcFreq(data):
 
     freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
     return freq
-
 
 def huffDec(data, root):
 	#Enter Your Code Here
@@ -373,7 +371,7 @@ def stringIt(arr):
     return arr
 
 #Transmittion
-def monteTransmit(EbNo, transArr, sourceData, root=0, code=0):
+def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
     BERarr = [None] * EbNo.size
     M = 64
     r = 0
@@ -409,7 +407,7 @@ def monteTransmit(EbNo, transArr, sourceData, root=0, code=0):
             answer = 'Hamming Encoded'
             r = calcRedundantBits(len(transArr))
             modArr = mod.modulate(transArr)
-            rateHamming = 1 - r/(2^r - 1)
+            rateHamming = 1 - (r/(2^r - 1))
             # rateHamming = 1/2
             recieveArr = awgn(modArr, SNR, rate=rateHamming)
             demodArr = mod.demodulate(recieveArr, 'hard')
@@ -421,12 +419,12 @@ def monteTransmit(EbNo, transArr, sourceData, root=0, code=0):
             print("The position of error is " + str(posError))
             print("The size of our data is this " + str(demodArr.size))
             print(str(i) + " out of " + str(EbNo.size))
-            # decodedData = correctIt(posError, r, demodArr)
-            sourceData = huffDec(decodedData, root)
+            decodedData = correctIt(posError, r, demodArr)
             print("")
         
-            # numErrs += np.sum(transArr != decodedData)
-            # BERarr[i] = numErrs/decodedData.size
+            numErrs += np.sum(decodedData != sourceData)
+            print("No of errors", numErrs)
+            BERarr[i] = numErrs/decodedData.size
             '''
             f = open("string/hammingCodes.txt", 'w')
             f.write('Corrected Data = ' + str(demodArr))
@@ -466,7 +464,7 @@ def monteTransmit(EbNo, transArr, sourceData, root=0, code=0):
             recieveArr = awgn(modArr, SNR, rate=1)
             demodArr = mod.demodulate(recieveArr, 'hard')
             answer = 'Original Data'
-            numErrs += np.sum(transArr != demodArr)
+            numErrs += np.sum(sourceData != demodArr)
             BERarr[i] = numErrs/demodArr.size
     plt.semilogy(EbNo, BERarr, label=answer)
     print("The number of errors in our code is ", numErrs)

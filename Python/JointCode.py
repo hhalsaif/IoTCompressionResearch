@@ -13,8 +13,8 @@ for z in range(3):
     print(z)
     # huffman code
 
-    '''
-    sizeOfData = np.random.randint(10,100)
+    
+    sizeOfData = 16 # np.random.randint(4, 64)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     
@@ -23,7 +23,7 @@ for z in range(3):
     R = open("DoneImages/data147.txt", "r")
     arr = R.read()
     R.close()   
-    
+    '''
     
     strData = ""
     for i in arr:
@@ -37,7 +37,7 @@ for z in range(3):
         decHuff += huffDec(huffData, root)
     print("Is it decoding correctly?")
     print(np.sum(decHuff != huffData))
-    f = open('Before_After.txt', 'w')
+    f = open('string/Before_After' + str(z) + '.txt', 'w')
     f.write ('Original Data = ' + str(origData))
     f.write ('Comp Data = ' + str(huffData))
     f.write ('unComp Data = ' +  str(decHuff))
@@ -68,7 +68,7 @@ for z in range(3):
     for i in range(1, len(sourceCodes)):
         # hamming code
         JSCData = hammingCoding(sourceCodes[i])
-        
+
         #LDPCData = get_ldpc_code_params(sourceCodes[i])
         # classTrellis(memory, g_matrix, feedback=0, code_type='default')
         # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
@@ -81,7 +81,7 @@ for z in range(3):
         plt.yscale('log')
         plt.grid(True)
 
-        monteTransmit(EbNo, np.array(list(origData),dtype=int), origData)
+        monteTransmit(EbNo, np.array(list(origData),dtype=int), sourceCodes[i])
         recieveArr = monteTransmit(EbNo, JSCData, sourceCodes[i], root, 1)
         
         # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
