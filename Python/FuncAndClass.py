@@ -241,17 +241,23 @@ def binText(arr):
     return origData
 
 def hammingCoding(data):
-    # Calculate the no of Redundant Bits Required
-    m = len(data)
-    r = calcRedundantBits(m)
-    print("m = ", m)
-    print("r = ", r)
-    # Determine the positions of Redundant Bits
-    arr = posRedundantBits(data, r)
+    print("Data that came into the hamming code ", data)
+    slicedStr=[]
+    for i in range (4, len(data)+1, 4):
+        slicedStr.append(data[i-4:i])
+    encodedStr=[]
+    for j in range(0, len(slicedStr)):
+        # Calculate the no of Redundant Bits Required
+        m = len(slicedStr[j])
+        r = calcRedundantBits(m)
 
-    # Determine the parity bits
-    arr = calcParityBits(arr, r)
+        # Determine the positions of Redundant Bits
+        arr = posRedundantBits(slicedStr[j], r)
 
+        # Determine the parity bits
+        arr = calcParityBits(arr, r)
+        encodedStr.append(arr)
+    arr = ''.join(encodedStr)
     # Data to be transferred
     arr = np.array(list(arr), dtype=int)
     print("Data transferred is ", arr)
@@ -317,6 +323,54 @@ def calcParityBits(arr, r):
 		arr = arr[:n-(2**i)] + str(val) + arr[n-(2**i)+1:] 
 	return arr 
 
+
+def hammDec(recArr):
+    recArr =  ''.join(map(str, recArr))
+    slicedStr=[]
+    for i in range (7, len(recArr)+1, 7):
+        slicedStr.append(recArr[i-7:i])
+    decodedStr=[]
+    for j in range(0, len(slicedStr)):
+        arr = slicedStr[j]
+        arr = np.array(list(arr), dtype=int)
+        error = [False, False, False]
+        for k in range (0,7):
+            if k == 0:
+                # parity bit 1 checks for all errors in positions 1,3,5,6 
+                if ((arr[0] + arr[2] + arr[4] + arr[6])%2==0 and arr[0]==0) or ((arr[0] + arr[2] + arr[4] + arr[6])%2==1 and arr[0]==1): error[0]=False 
+                else: error[0]=True             
+            elif k == 1:
+                # parity bit 1 checks for all errors in positions 1,3,5,6
+                if ((arr[0] + arr[2] + arr[4] + arr[6])%2==0 and arr[0]==0) or ((arr[0] + arr[2] + arr[4] + arr[6])%2==1 and arr[0]==1): error[0]=False  
+                else: error[0]=True   
+            elif k == 4:
+                # parity bit 1 checks for all errors in positions 1,3,5,6 
+                if ((arr[0] + arr[2] + arr[4] + arr[6])%2==0 and arr[0]==0) or ((arr[0] + arr[2] + arr[4] + arr[6])%2==1 and arr[0]==1): error[0]=False 
+                else: error[0]=True   
+            else:return    
+        if all(error) == False:
+            # if this is true then no errors detected and just remove parity bits
+            arr = arr.tolist()
+            arr = arr.pop(4)
+            arr = arr.pop(1)
+            arr = arr.pop(0)
+            decodedStr.append(arr)
+            return 
+        else:
+            posError = detectError(arr, 3)
+            if arr[posError] == 0: arr[posError] = 1
+            elif arr[posError] == 1: arr[posError] = 0
+            arr = arr.pop(4)
+            arr = arr.pop(1)
+            arr = arr.pop(0)
+            decodedStr.append(arr)
+            return
+    print("Sliced Decoded data is", decodedStr)
+    arr = ''.join(map(str, decodedStr))
+    print("")
+    print("The decoded Data is", arr)
+    return arr
+
 def detectError(arr, nr): 
     n = len(arr) 
     res = 0
@@ -374,7 +428,6 @@ def stringIt(arr):
 def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
     BERarr = [None] * EbNo.size
     M = 64
-    r = 0
     answer = ""
     for i in range(0, EbNo.size):
         SNR = EbNo[i]
@@ -405,13 +458,12 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
         
         if code == 1:
             answer = 'Hamming Encoded'
-            r = calcRedundantBits(len(transArr))
             modArr = mod.modulate(transArr)
-            rateHamming = 1 - (r/(2^r - 1))
-            # rateHamming = 1/2
+            rateHamming = 4/7
             recieveArr = awgn(modArr, SNR, rate=rateHamming)
             demodArr = mod.demodulate(recieveArr, 'hard')
             
+            '''
             r =  calcRedundantBits(len(demodArr))    
             posError = 0
             posError = detectError(stringIt(demodArr), r)
@@ -419,12 +471,12 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
             print("The position of error is " + str(posError))
             print("The size of our data is this " + str(demodArr.size))
             print(str(i) + " out of " + str(EbNo.size))
-            decodedData = correctIt(posError, r, demodArr)
-            print("")
-        
+            '''
+
+            decodedData = hammDec(demodArr)        
             numErrs += np.sum(decodedData != sourceData)
             print("No of errors", numErrs)
-            BERarr[i] = numErrs/decodedData.size
+            BERarr[i] = numErrs/len(decodedData)
             '''
             f = open("string/hammingCodes.txt", 'w')
             f.write('Corrected Data = ' + str(demodArr))
@@ -464,7 +516,7 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
             recieveArr = awgn(modArr, SNR, rate=1)
             demodArr = mod.demodulate(recieveArr, 'hard')
             answer = 'Original Data'
-            numErrs += np.sum(sourceData != demodArr)
+            numErrs += np.sum(transArr != demodArr)
             BERarr[i] = numErrs/demodArr.size
     plt.semilogy(EbNo, BERarr, label=answer)
     print("The number of errors in our code is ", numErrs)

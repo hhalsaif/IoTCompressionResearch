@@ -14,7 +14,7 @@ for z in range(3):
     # huffman code
 
     
-    sizeOfData = 16 # np.random.randint(4, 64)
+    sizeOfData = 4 # np.random.randint(4, 64)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     
