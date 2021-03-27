@@ -74,7 +74,7 @@ for z in range(3):
         # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
         # turboData = turbo_encode(sourceCodes[i], trellis1, trellis2, interleaver)
 
-        EbNo = np.arange(-10, 20)
+        EbNo = np.arange(10, 40)
         plt.xlabel('EbNo(dB)')
         plt.ylabel('BER')
         plt.title('BER vs SNR')
