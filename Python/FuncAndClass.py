@@ -14,6 +14,10 @@ from sys import argv
 from struct import *
 # Huffman Coding in python
 
+# Global Variables .... If I want to change multiple values
+totWithHammSize = 8
+noHammSize = 4
+
 # Creating tree nodes
 class NodeTree(object):
 
@@ -244,8 +248,8 @@ def binText(arr):
 def hammingCoding(data):
     print("Data that came into the hamming code ", data)
     slicedStr=[]
-    for i in range (4, len(data)+1, 4):
-        slicedStr.append(data[i-4:i])
+    for i in range (4, len(data)+1, noHammSize):
+        slicedStr.append(data[i-noHammSize:i])
     print("The sliced data is ", slicedStr)
     encodedStr=[]
     for j in range(0, len(slicedStr)):
@@ -280,12 +284,31 @@ def addParityBits(data, r):
     m = len(data)
     data = list(data)
     # if in postition that is a power of 2 then insert 0
-    # data.insert(0, '0')
+    data.insert(0, '0')
+    j = 0
     for i in range (1, m+1):
-        if 2**i%2==0:
+        if i == 2**j:
             data.insert(i, '0')
+            j+=1
     data = ''.join(data)
     return data
+
+def parityValues(arr):
+    arr = [int(i) for i in list(arr)]
+    parityNo = reduce(lambda x,y: x ^ y, [i for i, bit in enumerate(arr) if bit])
+    parityNo = bin(parityNo).replace("0b","")
+    if parityNo[0] != '0':
+        parityNo = list(parityNo)
+        for i in range (0, len(parityNo)):
+            if 2**i < len(arr):
+                arr[i] = parityNo[i] 
+    total=0
+    for i in range(0,len(arr)): 
+        if int(arr[i]) == 1: total+=1
+    if total%2==0: arr[0]='0'
+    else: arr[0]='1'
+    arr = ''.join([str(i) for i in arr])
+    return arr
 
 '''
 def posRedundantBits(data, r): 
@@ -332,78 +355,57 @@ def calcParityBits(arr, r):
 	return arr 
 '''
 
-def parityValues(arr):
-    arr = [int(i) for i in list(arr)]
-    parityNo = reduce(lambda x,y: x ^ y, [i for i, bit in enumerate(arr) if bit])
-    parityNo = bin(parityNo).replace("0b","")
-    if parityNo[0] != '0':
-        parityNo = list(parityNo)
-        for i in range (0, len(parityNo)):
-            if 2**i < len(arr):
-                arr[i] = parityNo[i] 
-    total=0
-    for i in range(0,len(arr)): 
-        if int(arr[i]) == 1: total+=1
-    if total%2==0: arr[0]='0'
-    else: arr[0]='1'
-    arr = ''.join([str(i) for i in arr])
-    return arr
-
 def hammDec(recArr):
     recArr =  ''.join(map(str, recArr))
     print("The data that came into the function", recArr)
     slicedStr=[]
-    for i in range (8, len(recArr)+1, 8):
-        slicedStr.append(recArr[i-8:i])
+    # breakup our data into the pieces that they were originally encoded as
+    for i in range (totWithHammSize, len(recArr)+1, totWithHammSize):
+        slicedStr.append(recArr[i-totWithHammSize:i])
     decodedStr=[]
     for j in range(0, len(slicedStr)):
         arr = slicedStr[j]
         arr = [int(i) for i in list(arr)]        
-        error = detectError(arr, 3)
+        # determine position of error and if none then return 0
+        error = reduce(lambda x,y: x ^ y, [i for i, bit in enumerate(arr) if bit])
         if error == 0:
-            # if this is true then no errors detected and just remove parity bits
+            # if this is true then no errors detected then just remove parity bits
             arr = [str(x) for x in arr]
-            arr = arr[2:3] + arr[4:]  # remove parity bits
-            arr = ''.join(arr)
-            decodedStr.append(arr)
+            decodedArr = remParityBits(arr)
+            decodedStr.append(decodedArr)
             print("No error detected")
-        else:
-            if error != 0:
-                if arr[error] == 0: arr[error] = 1
-                if arr[error] == 1: arr[error] = 0
-                # detect if there was one more error 
-                total=0
-                for i in range(0,len(arr)): 
-                    if int(arr[i]) == 1: total+=1
-                if total%2 != arr[0]:
-                    print("Extra error detected.")
+        elif error != 0: 
+            # correct error
+            if arr[error] == 0: 
+                arr[error] = 1
+            elif arr[error] == 1: 
+                arr[error] = 0
+            # detect if there was one more error 
+            total=0
+            for i in range(0,len(arr)): 
+                if int(arr[i]) == 1: total+=1
+            if total%2 != arr[0]:
+                print("Extra error detected.")
+            # remove any parity bits
             arr = [str(x) for x in arr]
-            arr = arr[2:3] + arr[4:]  # remove parity bits
-            arr = ''.join(arr)
-            decodedStr.append(arr)
-    arr = ''.join(decodedStr)
+            decodedArr = remParityBits(arr)
+            decodedStr.append(decodedArr)
+    finalArr = ''.join(decodedStr)
     print("Sliced data is", slicedStr)
     print("The decoded Data is", decodedStr)
-    print("The final data is", arr)
-    return arr
+    print("The final data is", finalArr)
+    return finalArr
 
-def detectError(arr, nr): 
-    n = len(arr) 
-    res = 0
-    # Calculate parity bits again 
-    for i in range(nr): 
-        val = 0
-        for j in range(0, n): 
-            if(j & (2**i) == (2**i)): 
-                val = val ^ int(arr[-1 * j]) 
-  
-        # Create a binary no by appending 
-        # parity bits together. 
-  
-        res += val*(10**i) 
-  
-    # Convert binary to decimal 
-    return int(str(res), 2)  
+def remParityBits(arr):
+    # remove parity bits
+    k=0
+    decodedArr=''
+    for i in range (1, len(arr)): 
+        if i != 2**k: 
+            decodedArr += arr[i]  
+            k+=1
+    decodedArr = decodedArr[1:]
+    return decodedArr
 
 def stringIt(arr):
     arr = arr.astype(str)
@@ -437,11 +439,10 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
         if code == 1:
             answer = 'Hamming Encoded'
             modArr = mod.modulate(transArr)
-            rateHamming = 4/8
+            rateHamming = noHammSize/totWithHammSize
             recieveArr = awgn(modArr, SNR, rate=rateHamming)
             demodArr = mod.demodulate(recieveArr, 'hard')
             demodArr = demodArr[:len(transArr)] #checking for size changes
-            
             print("The original Data is", sourceData)     
             print("The data with hamming code", stringIt(transArr))
             decodedData = hammDec(demodArr)   
@@ -481,14 +482,14 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
             recieveArr = awgn(modArr, SNR, rate=1)
             demodArr = mod.demodulate(recieveArr, 'hard')
             answer = 'Original Data'
-            numErrs += np.sum(transArr != demodArr)
-            BERarr[i] = numErrs/demodArr.size
+            decodedData = demodArr
+            numErrs += np.sum(sourceData != decodedData)
+            BERarr[i] = numErrs/decodedData.size
     plt.semilogy(EbNo, BERarr, label=answer)
     print("The number of errors in our code is ", numErrs)
-    print("Data Transmited is ", transArr)
-    print("Data Recieved is ", demodArr)
+    print("Data Transmited is ", sourceData)
+    print("Data Recieved is ", decodedData)
     print("The Bit error ratio is ", BERarr[i])
     print("")  
     
     return demodArr
-

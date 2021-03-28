@@ -37,11 +37,12 @@ for z in range(3):
         decHuff += huffDec(huffData, root)
     print("Is it decoding correctly?")
     print(np.sum(decHuff != huffData))
+
     f = open('string/Before_After' + str(z) + '.txt', 'w')
     f.write ('Original Data = ' + str(origData))
     f.write ('Comp Data = ' + str(huffData))
     f.write ('unComp Data = ' +  str(decHuff))
-    f.close()
+    f.close()    
 
     # LZWData = LZWEnc(strData)
     # infData = Deflate(strData)
@@ -67,6 +68,7 @@ for z in range(3):
     
     for i in range(1, len(sourceCodes)):
         # hamming code
+        origData = np.array(list(origData),dtype=int)
         JSCData = hammingCoding(sourceCodes[i])
 
         #LDPCData = get_ldpc_code_params(sourceCodes[i])
@@ -74,14 +76,14 @@ for z in range(3):
         # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
         # turboData = turbo_encode(sourceCodes[i], trellis1, trellis2, interleaver)
 
-        EbNo = np.arange(10, 40)
+        EbNo = np.arange(20, 40)
         plt.xlabel('EbNo(dB)')
         plt.ylabel('BER')
         plt.title('BER vs SNR')
         plt.yscale('log')
         plt.grid(True)
 
-        monteTransmit(EbNo, np.array(list(origData),dtype=int), sourceCodes[i])
+        monteTransmit(EbNo, origData, sourceCodes[i])
         recieveArr = monteTransmit(EbNo, JSCData, sourceCodes[i], root, 1)
         
         # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
