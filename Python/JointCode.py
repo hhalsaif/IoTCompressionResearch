@@ -4,7 +4,7 @@
 # Importing general libraries 
 import matplotlib.pyplot as plt
 import numpy as np
-from commpy.channelcoding import *
+from commpy.channelcoding import Trellis, conv_encode, turbo_encode, get_ldpc_code_params
 import string
 # Importing premade functions that will help clean the code
 from FuncAndClass import *
@@ -14,7 +14,7 @@ for z in range(3):
     # huffman code
 
     
-    sizeOfData = 4 # np.random.randint(4, 64)
+    sizeOfData = 4**8 # np.random.randint(4, 64)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     
@@ -30,19 +30,7 @@ for z in range(3):
         strData += i
     origData = binText(strData)
     huffData = huffComp(strData, z)
-    
-    decHuff = ''
-    for (char, frequency) in calcFreq(strData): 
-        root = Node(frequency, char)
-        decHuff += huffDec(huffData, root)
-    print("Is it decoding correctly?")
-    print(np.sum(decHuff != huffData))
-
-    f = open('string/Before_After' + str(z) + '.txt', 'w')
-    f.write ('Original Data = ' + str(origData))
-    f.write ('Comp Data = ' + str(huffData))
-    f.write ('unComp Data = ' +  str(decHuff))
-    f.close()    
+    freq = calcFreq(strData)  
 
     # LZWData = LZWEnc(strData)
     # infData = Deflate(strData)
@@ -76,15 +64,16 @@ for z in range(3):
         # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
         # turboData = turbo_encode(sourceCodes[i], trellis1, trellis2, interleaver)
 
-        EbNo = np.arange(20, 40)
+        EbNo = np.arange(-20, 10)
         plt.xlabel('EbNo(dB)')
         plt.ylabel('BER')
         plt.title('BER vs SNR')
         plt.yscale('log')
         plt.grid(True)
 
-        monteTransmit(EbNo, origData, sourceCodes[i])
-        recieveArr = monteTransmit(EbNo, JSCData, sourceCodes[i], root, 1)
+        sourceCodes[i] = [int(i) for i in sourceCodes[i]]
+        monteTransmit(EbNo, origData, strData)
+        recieveArr = monteTransmit(EbNo, JSCData, strData, freq, 1)
         
         # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
         # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)

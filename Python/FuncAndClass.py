@@ -1,20 +1,21 @@
 #libraries
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 import zlib
 
 # Importing the tools need from the commPy library
 from commpy.utilities import hamming_dist
 from commpy.channels import awgn
-from commpy.channelcoding import *
+from commpy.channelcoding import viterbi_decode, map_decode, turbo_decode, ldpc_bp_decode
 from commpy.modulation import QAMModem, Modem
 from functools import reduce
 from sys import argv
 from struct import *
+from operator import ixor
+
 # Huffman Coding in python
 
-# Global Variables .... If I want to change multiple values
+# Global Variables, currently only used for changing the Hamming family
 totWithHammSize = 8
 noHammSize = 4
 
@@ -73,9 +74,9 @@ def huffComp(data, z):
     print('----------------------')
     for (char, frequency) in freq:
         print(' %-4r |%12s' % (char, huffmanCode[char]))
+    print("")
     compdata = ''
-    for char in data:
-        compdata += huffmanCode[char]
+    for char in data: compdata += huffmanCode[char]
     return compdata
 
 def calcFreq(data):
@@ -92,23 +93,25 @@ def calcFreq(data):
 
 def huffDec(data, root):
 	#Enter Your Code Here
+    data = "".join([str(i) for i in data])
+
     cur = root
+    char = data
     chararray = []
     #For each character, 
     #If at an internal node, move left if 0, right if 1
     #If at a leaf (no children), record data and jump back to root AFTER processing character
-    for char in data:
-        if char == '0' and cur.left:
-            cur = cur.left
-        elif cur.right:
-            cur = cur.right
-        
-        if cur.left is None and cur.right is None:
-            chararray.append(cur.data)
-            cur = root
+    if char == '0' and cur.left:
+        cur = cur.left
+    elif cur.right:
+        cur = cur.right
+    
+    if cur.left is None and cur.right is None:
+        chararray.append(cur.data)
+        cur = root
     
     #Print final array
-    return("".join(chararray))
+    return("".join([str(i) for i in chararray]))
 
 # Function for LZW Compression
 def LZWEnc(strData, code_width=12):
@@ -248,7 +251,7 @@ def binText(arr):
 def hammingCoding(data):
     print("Data that came into the hamming code ", data)
     slicedStr=[]
-    for i in range (4, len(data)+1, noHammSize):
+    for i in range (noHammSize, len(data)+1, noHammSize):
         slicedStr.append(data[i-noHammSize:i])
     print("The sliced data is ", slicedStr)
     encodedStr=[]
@@ -295,18 +298,13 @@ def addParityBits(data, r):
 
 def parityValues(arr):
     arr = [int(i) for i in list(arr)]
-    parityNo = reduce(lambda x,y: x ^ y, [i for i, bit in enumerate(arr) if bit])
+    parityNo = reduce(ixor, arr)
     parityNo = bin(parityNo).replace("0b","")
-    if parityNo[0] != '0':
-        parityNo = list(parityNo)
-        for i in range (0, len(parityNo)):
-            if 2**i < len(arr):
-                arr[i] = parityNo[i] 
-    total=0
-    for i in range(0,len(arr)): 
-        if int(arr[i]) == 1: total+=1
-    if total%2==0: arr[0]='0'
-    else: arr[0]='1'
+    parityNo = [int(i) for i in list(parityNo)]
+    for i in range (0, len(parityNo)): arr[2**i] = parityNo[i] 
+    total=sum(arr)
+    if total%2==0: arr[0]=0
+    else: arr[0]=1
     arr = ''.join([str(i) for i in arr])
     return arr
 
@@ -356,8 +354,6 @@ def calcParityBits(arr, r):
 '''
 
 def hammDec(recArr):
-    recArr =  ''.join(map(str, recArr))
-    print("The data that came into the function", recArr)
     slicedStr=[]
     # breakup our data into the pieces that they were originally encoded as
     for i in range (totWithHammSize, len(recArr)+1, totWithHammSize):
@@ -367,42 +363,33 @@ def hammDec(recArr):
         arr = slicedStr[j]
         arr = [int(i) for i in list(arr)]        
         # determine position of error and if none then return 0
-        error = reduce(lambda x,y: x ^ y, [i for i, bit in enumerate(arr) if bit])
+        error = reduce(ixor, arr)
         if error == 0:
             # if this is true then no errors detected then just remove parity bits
-            arr = [str(x) for x in arr]
             decodedArr = remParityBits(arr)
             decodedStr.append(decodedArr)
             print("No error detected")
-        elif error != 0: 
+        else: 
             # correct error
-            if arr[error] == 0: 
-                arr[error] = 1
-            elif arr[error] == 1: 
-                arr[error] = 0
-            # detect if there was one more error 
-            total=0
-            for i in range(0,len(arr)): 
-                if int(arr[i]) == 1: total+=1
+            arr[error] = int(not arr[error])
+            # detect for additional error 
+            total = sum(arr)
             if total%2 != arr[0]:
                 print("Extra error detected.")
             # remove any parity bits
-            arr = [str(x) for x in arr]
             decodedArr = remParityBits(arr)
             decodedStr.append(decodedArr)
-    finalArr = ''.join(decodedStr)
-    print("Sliced data is", slicedStr)
-    print("The decoded Data is", decodedStr)
+    finalArr = [j for i in decodedStr for j in i]
     print("The final data is", finalArr)
     return finalArr
 
 def remParityBits(arr):
     # remove parity bits
     k=0
-    decodedArr=''
+    decodedArr = []
     for i in range (1, len(arr)): 
         if i != 2**k: 
-            decodedArr += arr[i]  
+            decodedArr.append(arr[i])
             k+=1
     decodedArr = decodedArr[1:]
     return decodedArr
@@ -414,7 +401,7 @@ def stringIt(arr):
     return arr
 
 #Transmittion
-def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
+def monteTransmit(EbNo, transArr, sourceData, freq=0 , code=0):
     BERarr = [None] * EbNo.size
     M = 64
     answer = ""
@@ -442,11 +429,12 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
             rateHamming = noHammSize/totWithHammSize
             recieveArr = awgn(modArr, SNR, rate=rateHamming)
             demodArr = mod.demodulate(recieveArr, 'hard')
-            demodArr = demodArr[:len(transArr)] #checking for size changes
-            print("The original Data is", sourceData)     
-            print("The data with hamming code", stringIt(transArr))
-            decodedData = hammDec(demodArr)   
-            numErrs += np.sum(decodedData != sourceData)
+            decodedData = hammDec(demodArr)  
+            decHuff = ''
+            for (char, frequency) in freq: 
+                root = Node(freq, char)
+                decHuff += huffDec(decodedData, root)
+            numErrs += np.sum(decHuff != sourceData)
             BERarr[i] = numErrs/len(decodedData)
             print("")
 
@@ -479,16 +467,17 @@ def monteTransmit(EbNo, transArr, sourceData, root=0 , code=0):
             BERarr[i] = numErrs/decodedData.size           
 
         else:
+            answer = 'Original Data'
             recieveArr = awgn(modArr, SNR, rate=1)
             demodArr = mod.demodulate(recieveArr, 'hard')
-            answer = 'Original Data'
-            decodedData = demodArr
+            demodArr = ''.join([str(i) for i in demodArr])
+            decodedData = ''.join(chr(int(demodArr[i*8:i*8+8],2)) for i in range(len(demodArr)//8))
             numErrs += np.sum(sourceData != decodedData)
-            BERarr[i] = numErrs/decodedData.size
+            BERarr[i] = numErrs/len(decodedData)
     plt.semilogy(EbNo, BERarr, label=answer)
     print("The number of errors in our code is ", numErrs)
-    print("Data Transmited is ", sourceData)
-    print("Data Recieved is ", decodedData)
+    print("Data Transmited is", sourceData)
+    print("Data Recieved is", decodedData)
     print("The Bit error ratio is ", BERarr[i])
     print("")  
     
