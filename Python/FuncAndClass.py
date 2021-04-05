@@ -1,36 +1,37 @@
 # libraries
 import matplotlib.pyplot as plt
 import numpy as np
-import heapq
-import zlib
 import sys
 import io
+import heapq # for use with huffman coding
+from struct import * # ^^^
+import zlib # to use the deflate/inflate
+from functools import reduce; from operator import ixor #to help withe error correction
 
 # Importing the tools need from the commPy library
 from commpy.modulation import QAMModem, Modem
 from commpy.channels import awgn
 from commpy.channelcoding import viterbi_decode, map_decode, turbo_decode, ldpc_bp_decode
-from functools import reduce; from operator import ixor
-from struct import *
 
 # Huffman Coding in python
 
 # Global Variables
-totWithHammSize = 8
-noHammSize = 4
+totWithHammSize = 11
+noHammSize = 16
 
 # Conversion to and from binary
 
 
 def binText(arr):
-     # Load data as bytes if its not otherwise continue
+    # Load data as bytes if its not otherwise continue
     if type(arr) != bytes: arr = bytes(arr, 'utf-8')
     return bin(int.from_bytes(arr, byteorder=sys.byteorder))[2:]
 
 
 def textBin(arr):
+    print(arr)
     arr = int(arr, 2).to_bytes((len(arr) + 7) // 8, byteorder=sys.byteorder)
-    return arr.decode()
+    return str(arr, 'utf-8')
 
 
 # Huffman Coding
@@ -472,7 +473,7 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             decodedData=h.decompress(decodedData)
         elif source == 2: decodedData=LZWDec(decodedData)
         elif source == 3: decodedData=inflate(decodedData)
-        # else: decodedData=textBin(decodedData)
+        else: decodedData=textBin(decodedData)
 
         numErrs += np.sum(binText(decodedData) != binText(sourceData))
         BERarr[i]=numErrs/len(binText(decodedData))

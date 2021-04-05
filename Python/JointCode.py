@@ -3,50 +3,76 @@ import matplotlib.pyplot as plt
 import numpy as np
 from commpy.channelcoding import Trellis, conv_encode, turbo_encode, get_ldpc_code_params
 import string
-from time import perf_counter
 # Importing premade functions that will help clean the code
 from FuncAndClass import *
+# Importing tools for benchmarking
+from time import perf_counter_ns
+from pypapi import papi_high
+from pypapi import events as papi_events
 
 for z in range(10):
     print(z)
     # Data Generation
-    sizeOfData = 20  #np.random.randint(1, 64)
+    sizeOfData = 40  #np.random.randint(1, 64)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     strData = ''.join([str(i) for i in arr])
     byteData = bytes(strData, 'utf-8')
 
-    # Data that will help with comparisions
+    
+    # Data that will help with comparisions of compression techniques
     sourceNames = ["Original Data", "Huffman Compression", "LZW Compression", "Inflate/Deflate Compression"]
     origData = binText(strData) ; h = HuffmanCoding() ; huffData = h.compress(byteData) ; LZWdata = LZWEnc(byteData) ; defData = deflate(byteData)
     sourceCodes=[origData, huffData, LZWdata, defData] 
     decodedCodes=[origData, huffData, LZWdata, defData]
     compAlgo = [binText, h.compress, LZWEnc, deflate] # Functinos of the compression techniques we use
     deCompAlgo = [textBin, h.decompress, LZWDec, inflate] # Functions of decompression techniques we use
-    noOfData = 4
-    time =  [0.0, 0.0, 0.0, 0.0] ; timeDe = [0.0, 0.0, 0.0, 0.0] ;timeStart = [0.0, 0.0, 0.0, 0.0] ; timeStop = [0.0, 0.0, 0.0, 0.0]
+    
+    # Tracking for benchmarking
+    timeEn = [0.0,0.0,0.0,0.0] ; timeDe = [0.0,0.0,0.0,0.0]; flopsEn = [0.0,0.0,0.0,0.0,]; flopsDe = [0.0,0.0,0.0,0.0]
+    
+    noOfData = 4    #How many compression techniques do we want to use 
+
 
     for i in range(noOfData):
-        timeStart[i] = perf_counter()
-        sourceCodes[i] = compAlgo[i](byteData)
-        timeStop[i] = perf_counter()
-        time[i] = timeStop[i] - timeStart[i]
-    
-    for i in range(noOfData):
-        timeStart[i] = perf_counter()
+        # Time taken to compress
+        timeStart = perf_counter_ns()
+        if i == 0: sourceCodes[i] = compAlgo[i](strData)
+        else:sourceCodes[i] = compAlgo[i](byteData)
+        timeStop = perf_counter_ns()
+        timeEn[i] = timeStart - timeStop
+        
+        #Number of Flops 
+        papi_high.flops()
+        result = papi_high.flops()
+        flopsEn[i] = result.mflops
+        papi_high.stop_counters()
+
+    for i in range(noOfData):     
+        # Time taken to decompress
+        timeStart = perf_counter_ns()
         decodedCodes[i] = deCompAlgo[i](sourceCodes[i])
-        timeStop[i] = perf_counter()
-        timeDe[i] = timeStop[i] - timeStart[i]
+        timeStop = perf_counter_ns()
+        timeDe[i] = timeStart - timeStop
+        
+        #Number of Flops 
+        papi_high.flops()
+        decodedCodes[i] = deCompAlgo[i](sourceCodes[i])
+        result = papi_high.flops()
+        flopsDe[i] = result.mflops
+        papi_high.stop_counters()
     
     for i in range(noOfData): 
         if strData != decodedCodes[i]: print(str(i) + "\n" + "Error in decoding found" + "\n" + "original data: " + strData + "\n" + "decoded data: " + decodedCodes[i])
     
-    print ("Normally our code would be of size ", len(sourceCodes[0])) ; print("")
+    print("Normally our code would be of size ", len(sourceCodes[0])) ; print("")
     for i in range(0, noOfData):
-        print ("Using ", sourceNames[i],  len(sourceCodes[i]))
-        print ("Compression ratio of " , len(origData)/len(sourceCodes[i]))
-        print ("The time taken to compress", time[i])
-        print ("The time taken to decompress", timeDe[i])
+        print("Using ", sourceNames[i],  len(sourceCodes[i]))
+        print("Compression ratio of " , len(origData)/len(sourceCodes[i]))
+        print("The time taken to compress", timeEn[i])
+        print("The time taken to decompress", timeDe[i])
+        print("Number of FLOPS to compress", flopsEn[i])
+        print("Number of FLOPS to compress", flopsDe[i])
         print("")
         # plotting for better visuals
         plt.bar(sourceNames[i], len(sourceCodes[i]), align='center')
@@ -82,9 +108,6 @@ for z in range(10):
         plt.close()
         print("")
     
-
-# In[ ]:
-
 
 
 
