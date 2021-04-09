@@ -3,10 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import io
-import heapq # for use with huffman coding
-from struct import * # ^^^
-import zlib # to use the deflate/inflate
-from functools import reduce; from operator import ixor #to help withe error correction
+# Compression techniques
+import heapq ; from struct import * # Huffman Coding
+import zlib # Deflate/Inflate
+import lzma # LZMA compression
+import zstandard as zstd # ZSTD compression
+from functools import reduce; from operator import ixor # To help with error correction
 
 # Importing the tools need from the commPy library
 from commpy.modulation import QAMModem, Modem
@@ -16,22 +18,20 @@ from commpy.channelcoding import viterbi_decode, map_decode, turbo_decode, ldpc_
 # Huffman Coding in python
 
 # Global Variables
-totWithHammSize = 11
-noHammSize = 16
+totWithHammSize = 8
+noHammSize = 4
 
 # Conversion to and from binary
-
-
 def binText(arr):
     # Load data as bytes if its not otherwise continue
     if type(arr) != bytes: arr = bytes(arr, 'utf-8')
-    return bin(int.from_bytes(arr, byteorder=sys.byteorder))[2:]
-
+    arr = bin(int.from_bytes(arr, byteorder=sys.byteorder))[2:]
+    return arr
 
 def textBin(arr):
-    print(arr)
     arr = int(arr, 2).to_bytes((len(arr) + 7) // 8, byteorder=sys.byteorder)
-    return str(arr, 'utf-8')
+    arr = str(arr,'utf-8')
+    return arr
 
 
 # Huffman Coding
@@ -135,7 +135,8 @@ class HuffmanCoding:
         return b
 
     def compress(self, inpData):
-        inpData = str(inpData, 'utf-8')
+        if type(inpData) != str:
+            inpData = str(inpData, 'utf-8')
         text = inpData
         text = text.rstrip()
 
@@ -183,6 +184,17 @@ class HuffmanCoding:
         encoded_text=self.remove_padding(bit_string)
         decompressed_text=self.decode_text(encoded_text)
         return decompressed_text
+
+def huffComp(data):
+    if type(data)!=str: str(data,'utf-8') 
+    h = HuffmanCoding()
+    data = h.compress(data) 
+    return data
+
+def huffDecomp(data):
+    h = HuffmanCoding()
+    data = h.decompress(data)
+    return data
 
 # Function for LZW Compression
 '''
@@ -234,85 +246,93 @@ def LZWEnc(data, code_width=12):
         encodedLZW += pack('>H', int(data))
     return bin(int.from_bytes(encodedLZW, byteorder=sys.byteorder))[2:]
 
-def LZWDec(data, code_width=12):
-    data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
-    maximum_table_size=pow(2, int(code_width))
-
+def LZWDec(data, code_width=12): 
+    data=int(data, 2).to_bytes( (len(data)+7) // 8, byteorder=sys.byteorder)
+    maximum_table_size = pow(2,int(code_width))
     # Default values in order to read the compressed file
-    compressed_data=[]
-    next_code=256
-    decompressed_data=""
-    phrase=""
+    compressed_data = []
+    next_code = 256
+    decompressed_data = ""
+    phrase = ""
 
-    dataInput=io.BytesIO(data)
+    dataRead=io.BytesIO(data)
+    # Reading the compressed file.
     while True:
-        rec=dataInput.read(2)
+        rec = dataRead.read(2)
         if len(rec) != 2:
             break
-        (data, )=unpack('>H', rec)
+        (data, ) = unpack('>H', rec)
         compressed_data.append(data)
 
     # Building and initializing the dictionary.
-    dictionary_size=256
-    dictionary=dict([(x, chr(x)) for x in range(dictionary_size)])
+    dictionary_size = 256
+    dictionary = dict([(x, chr(x)) for x in range(dictionary_size)])
 
     # Iterating through the codes.
     # LZW Decompression algorithm
     for code in compressed_data:
-        # If we find a new
+        
+        # If we find a new 
         if not (code in dictionary):
             dictionary[code] = phrase + (phrase[0])
-
+        
         decompressed_data += dictionary[code]
-
+        
         if not(len(phrase) == 0):
             # Ensures we don't exceed the bounds of the table
             if(len(dictionary) <= maximum_table_size):
-                dictionary[next_code]=phrase + (dictionary[code][0])
+                dictionary[next_code] = phrase + (dictionary[code][0])
                 next_code += 1
-        phrase=dictionary[code]
+        phrase = dictionary[code]
 
     # storing the decompressed string into a file.
-    decodedLZW=''
+    decodedLZW = ''
     for data in decompressed_data:
         decodedLZW += data
     return decodedLZW
 
-'''
-A lot of code credit goes to:
-Author = James Cameron
-website = https://izziswift.com/python-inflate-and-deflate-implementations/
-'''
-
+# FUnctions for DEFLATE Compression
 def deflate(data, compresslevel=9):
-    compress=zlib.compressobj(
-            compresslevel,        # level: 0-9
-            zlib.DEFLATED,        # method: must be DEFLATED
-            -zlib.MAX_WBITS,      # window size in bits:
-                                  #   -15..-8: negate, suppress header
-                                  #   8..15: normal
-                                  #   16..30: subtract 16, gzip header
-            zlib.DEF_MEM_LEVEL,   # mem level: 1..8/9
-            0                     # strategy:
-                                  #   0 = Z_DEFAULT_STRATEGY
-                                  #   1 = Z_FILTERED
-                                  #   2 = Z_HUFFMAN_ONLY
-                                  #   3 = Z_RLE
-                                  #   4 = Z_FIXED
-    )
+    compress=zlib.compressobj(compresslevel, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0 )
+    if type(data)!=bytes: data = bytes(data, 'utf-8')
     deflated=compress.compress(data)
     deflated += compress.flush()
     return bin(int.from_bytes(deflated, byteorder=sys.byteorder))[2:]
 
 def inflate(data):
-    decompress=zlib.decompressobj(
-            -zlib.MAX_WBITS  # see above
-    )
+    decompress=zlib.decompressobj(-zlib.MAX_WBITS)
     data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
     inflated=decompress.decompress(data)
     inflated += decompress.flush()
     return str(inflated, 'utf-8')
 
+# Functions for LZMA Compression
+def LZMAComp(data):
+    if type(data) != bytes: data = bytes(data,'utf-8')
+    compressor = lzma.LZMACompressor()
+    data = compressor.compress(data)
+    return bin(int.from_bytes(data, byteorder=sys.byteorder))[2:]
+
+def LZMADeComp(data):
+    data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
+    decompressor = lzma.LZMADecompressor()
+    data = decompressor.decompress(data)
+    return str(data, 'utf-8')
+
+# Functions for ZSTD Compression
+def zstdComp(data):
+    if type(data) != bytes: data = bytes(data,'utf-8')
+    compressor = zstd.ZstdCompressor()
+    data = compressor.compress(data)
+    return bin(int.from_bytes(data, byteorder=sys.byteorder))[2:]
+
+def zstdDeComp(data):
+    data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
+    decompressor = zstd.ZstdDecompressor()
+    data = decompressor.decompress(data)
+    return str(data, 'utf-8')
+    
+# Functions for hamming code
 def hammingCoding(data):
     slicedStr=[]
     for i in range(noHammSize, len(data)+1, noHammSize):
@@ -394,7 +414,7 @@ def hammDec(recArr):
             decodedArr=remParityBits(arr)
             decodedStr.append(decodedArr)
     finalArr=[j for i in decodedStr for j in i]
-    return finalArr, extraError
+    return finalArr #, extraError
 
 def remParityBits(arr):
     # remove parity bits
@@ -410,7 +430,7 @@ def remParityBits(arr):
 # Transmittion
 def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
     BERarr=[None] * len(EbNo)
-    M=64
+    M=16
     numErrs=0
     answer=""
     for i in range(0, len(EbNo)):
@@ -427,7 +447,8 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             rateHamming=noHammSize/totWithHammSize
             recieveArr=awgn(modArr, SNR, rate=rateHamming)
             demodArr=mod.demodulate(recieveArr, 'hard')
-            decodedData, extra=hammDec(demodArr)
+            decodedData=hammDec(demodArr)
+            # decodedData = decodedData[:len(transArr)]
             decodedData=''.join(str(i) for i in decodedData)
 
         elif code == 2:
@@ -471,17 +492,22 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
         if source == 1:
             h=HuffmanCoding()
             decodedData=h.decompress(decodedData)
-        elif source == 2: decodedData=LZWDec(decodedData)
-        elif source == 3: decodedData=inflate(decodedData)
-        else: decodedData=textBin(decodedData)
+            decodedData = bytes(decodedData, 'utf-8')  
+                
+        elif source == 2:
+            decodedData=LZWDec(decodedData)  
+            decodedData = bytes(decodedData, 'utf-8')   
 
-        numErrs += np.sum(binText(decodedData) != binText(sourceData))
-        BERarr[i]=numErrs/len(binText(decodedData))
+        elif source == 3: 
+            decodedData=inflate(decodedData) 
+            decodedData = bytes(decodedData, 'utf-8')
+        else: 
+            decodedData=int(decodedData, 2).to_bytes((len(decodedData) + 7) // 8, byteorder=sys.byteorder)
+        numErrs += np.sum(decodedData != sourceData)
+        BERarr[i]=numErrs/len(sourceData)
     plt.semilogy(EbNo[::-1], BERarr, label=answer)
     print(answer)
     print("The number of errors in our code is ", numErrs)
-    # print("Data Transmited is", sourceData)
-    # print("Data Recieved is", decodedData)
     print("The Bit error ratio is ", BERarr[i])
     print("")
 
