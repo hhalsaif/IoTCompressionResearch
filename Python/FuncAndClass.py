@@ -1,13 +1,15 @@
 # libraries
 import matplotlib.pyplot as plt
 import numpy as np
+import struct
 import sys
 import io
 # Compression techniques
-import heapq ; from struct import * # Huffman Coding
+import heapq # Huffman Coding
 import zlib # Deflate/Inflate
 import lzma # LZMA compression
-import zstandard as zstd # ZSTD compression
+import bz2 # bzip2 compression
+import zstandard # ZSTD compression
 from functools import reduce; from operator import ixor # To help with error correction
 
 # Importing the tools need from the commPy library
@@ -15,24 +17,28 @@ from commpy.modulation import QAMModem, Modem
 from commpy.channels import awgn
 from commpy.channelcoding import viterbi_decode, map_decode, turbo_decode, ldpc_bp_decode
 
-# Huffman Coding in python
-
 # Global Variables
 totWithHammSize = 8
 noHammSize = 4
 
 # Conversion to and from binary
-def binText(arr):
+def binIt(arr):
     # Load data as bytes if its not otherwise continue
     if type(arr) != bytes: arr = bytes(arr, 'utf-8')
-    arr = bin(int.from_bytes(arr, byteorder=sys.byteorder))[2:]
+    arr = bin(int.from_bytes(arr, byteorder='big'))[2:]
     return arr
 
-def textBin(arr):
-    arr = int(arr, 2).to_bytes((len(arr) + 7) // 8, byteorder=sys.byteorder)
-    arr = str(arr,'utf-8')
+def returnIt(arr):
+    arr = int(arr, 2).to_bytes((len(arr) + 7) // 8, byteorder='big')
     return arr
 
+def turnBin(v):
+    b = bin(v)[2:]
+    return b.rjust(8, '0')
+
+def turnBack(b):
+    i = int(b,2)
+    return i.to_bytes((len(i) + 7 ) // 8, byteorder = 'big')
 
 # Huffman Coding
 class HuffmanCoding:
@@ -149,7 +155,8 @@ class HuffmanCoding:
         padded_encoded_text = self.pad_encoded_text(encoded_text)
 
         b = self.get_byte_array(padded_encoded_text)
-        return bin(int.from_bytes(bytes(b), byteorder=sys.byteorder))[2:]
+        binData = "".join(map(turnBin,  b))
+        return binData
 
     # functions for decompression
 
@@ -173,7 +180,7 @@ class HuffmanCoding:
 
     def decompress(self, data):
         bit_string=""
-        data = int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
+        data = int(data, 2).to_bytes((len(data) + 7) // 8, byteorder='big')
         byteData=io.BytesIO(data)
         byte=byteData.read(1)
         while(len(byte) > 0):
@@ -243,11 +250,16 @@ def LZWEnc(data, code_width=12):
     encodedLZW=bytearray()
     for data in compressed_data:
         # Saves the code as an unsigned short
-        encodedLZW += pack('>H', int(data))
-    return bin(int.from_bytes(encodedLZW, byteorder=sys.byteorder))[2:]
+        encodedLZW += struct.pack('>H', int(data))
+    print(encodedLZW)
+    binData = "".join(map(turnBin, encodedLZW))
+    return binData
 
 def LZWDec(data, code_width=12): 
-    data=int(data, 2).to_bytes( (len(data)+7) // 8, byteorder=sys.byteorder)
+    dataInt = int(data,2)
+    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='little')
+    data = bytearray(data)
+    print(data)
     maximum_table_size = pow(2,int(code_width))
     # Default values in order to read the compressed file
     compressed_data = []
@@ -261,7 +273,7 @@ def LZWDec(data, code_width=12):
         rec = dataRead.read(2)
         if len(rec) != 2:
             break
-        (data, ) = unpack('>H', rec)
+        (data, ) = struct.unpack('>H', rec)
         compressed_data.append(data)
 
     # Building and initializing the dictionary.
@@ -293,15 +305,17 @@ def LZWDec(data, code_width=12):
 
 # FUnctions for DEFLATE Compression
 def deflate(data, compresslevel=9):
-    compress=zlib.compressobj(compresslevel, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0 )
     if type(data)!=bytes: data = bytes(data, 'utf-8')
+    compress=zlib.compressobj(compresslevel, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0 )
     deflated=compress.compress(data)
     deflated += compress.flush()
-    return bin(int.from_bytes(deflated, byteorder=sys.byteorder))[2:]
+    binData = "".join(map(turnBin, deflated))
+    return binData
 
 def inflate(data):
+    dataInt = int(data,2)
+    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
     decompress=zlib.decompressobj(-zlib.MAX_WBITS)
-    data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
     inflated=decompress.decompress(data)
     inflated += decompress.flush()
     return str(inflated, 'utf-8')
@@ -311,10 +325,12 @@ def LZMAComp(data):
     if type(data) != bytes: data = bytes(data,'utf-8')
     compressor = lzma.LZMACompressor()
     data = compressor.compress(data)
-    return bin(int.from_bytes(data, byteorder=sys.byteorder))[2:]
+    binData = "".join(map(turnBin, data))
+    return binData
 
 def LZMADeComp(data):
-    data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
+    dataInt = int(data,2)
+    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
     decompressor = lzma.LZMADecompressor()
     data = decompressor.decompress(data)
     return str(data, 'utf-8')
@@ -322,13 +338,15 @@ def LZMADeComp(data):
 # Functions for ZSTD Compression
 def zstdComp(data):
     if type(data) != bytes: data = bytes(data,'utf-8')
-    compressor = zstd.ZstdCompressor()
+    compressor = zstandard.ZstdCompressor()
     data = compressor.compress(data)
-    return bin(int.from_bytes(data, byteorder=sys.byteorder))[2:]
+    binData = "".join(map(turnBin, data))
+    return binData
 
 def zstdDeComp(data):
-    data=int(data, 2).to_bytes((len(data) + 7) // 8, byteorder=sys.byteorder)
-    decompressor = zstd.ZstdDecompressor()
+    dataInt = int(data,2)
+    data= dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')    
+    decompressor = zstandard.ZstdDecompressor()
     data = decompressor.decompress(data)
     return str(data, 'utf-8')
     
@@ -489,20 +507,12 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=''.join(str(i) for i in demodArr)
 
-        if source == 1:
-            h=HuffmanCoding()
-            decodedData=h.decompress(decodedData)
+        deCompAlgo = [returnIt, huffDecomp, LZWDec, inflate, LZMADeComp, zstdDeComp] # Functions for decompression techniques we use
+        if source != 0:       
+            decodedData = deCompAlgo[source](decodedData)
             decodedData = bytes(decodedData, 'utf-8')  
-                
-        elif source == 2:
-            decodedData=LZWDec(decodedData)  
-            decodedData = bytes(decodedData, 'utf-8')   
-
-        elif source == 3: 
-            decodedData=inflate(decodedData) 
-            decodedData = bytes(decodedData, 'utf-8')
         else: 
-            decodedData=int(decodedData, 2).to_bytes((len(decodedData) + 7) // 8, byteorder=sys.byteorder)
+            decodedData=int(decodedData, 2).to_bytes((len(decodedData) + 7) // 8, byteorder='big')
         numErrs += np.sum(decodedData != sourceData)
         BERarr[i]=numErrs/len(sourceData)
     plt.semilogy(EbNo[::-1], BERarr, label=answer)

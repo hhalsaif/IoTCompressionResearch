@@ -4,6 +4,7 @@
 # Importing general libraries 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from commpy.channelcoding import Trellis, conv_encode, turbo_encode, get_ldpc_code_params
 import string
 # Importing premade functions that will help clean the code
@@ -14,22 +15,30 @@ from pypapi import papi_high
 
 for z in range(1):
     print(z)
-    # Data Generation
-    sizeOfData = 63 #np.random.randint(1, 64)
+    # Data Generation of random string
+    sizeOfData = 4*12 #np.random.randint(1, 64)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     strData = ''.join([str(i) for i in arr])
-    #byteData = bytes(strData, 'utf-8')
+    
+    # Data generation of random number from the dataset
+    df = pd.read_csv("Datasets/IOT-temp.csv")    
+    temps = pd.Series(df['temp'])
+    dataNo = np.random.randint(1,97600)
+    data = temps[dataNo]
+    print(data)
+    byteData = data.tobytes()
+    # byteData = bytes(data, 'utf-8')
 
     #How many compression techniques do we want to use 
     noOfData = 6   
 
     # Data that will help with comparisions of compression techniques
-    sourceNames = ["Original Data", "Huffman Compression", "LZW Compression", "DEFLATE Compression", "LZMA Compression", "Zstandard Compression"]
+    sourceNames = ["Original", "Huffman", "LZW", "DEFLATE", "LZMA", "Zstandard"]
     sourceCodes=[0] * noOfData 
     decodedCodes=[0] * noOfData
-    compAlgo = [binText, huffComp, LZWEnc, deflate, LZMAComp, zstdComp] # Functinos of the compression techniques we use
-    deCompAlgo = [textBin, huffDecomp, LZWDec, inflate, LZMADeComp, zstdDeComp] # Functions of decompression techniques we use
+    compAlgo = [binIt, huffComp, LZWEnc, deflate, LZMAComp, zstdComp] # Functinos for the compression techniques we use
+    deCompAlgo = [returnIt, huffDecomp, LZWDec, inflate, LZMADeComp, zstdDeComp] # Functions for decompression techniques we use
 
     # Tracking for benchmarking
     timeEn = [0.0] * noOfData ; timeDe = [0.0] * noOfData ; flopsEn = [0.0] * noOfData; flopsDe = [0.0] * noOfData
@@ -37,8 +46,7 @@ for z in range(1):
     for i in range(noOfData):
         # Time taken to compress
         timeStart = perf_counter_ns()
-        if i == 0: sourceCodes[i] = compAlgo[i](strData)
-        else:sourceCodes[i] = compAlgo[i](strData)
+        sourceCodes[i] = compAlgo[i](byteData)
         timeStop = perf_counter_ns()
         timeEn[i] = timeStop - timeStart
 
@@ -64,10 +72,7 @@ for z in range(1):
         result = papi_high.flops()
         flopsDe[i] = result.mflops
         papi_high.stop_counters()
-        '''
-    for i in range(noOfData): 
-        if strData != decodedCodes[i]: print(str(i) + "\n" + "Error in decoding found" + "\n" + "original data: " + strData + "\n" + "decoded data: " + decodedCodes[i])
-    
+        '''    
     print("Normally our code would be of size ", len(sourceCodes[0])) ; print("")
 
     for i in range(0, noOfData):
@@ -85,11 +90,12 @@ for z in range(1):
     plt.show()
     plt.close()
 
-    '''
+    sourceCodes.pop(2)
+    sourceNames.pop(2)
     for i in range(1, noOfData):
         # hamming code
         origData = np.array(list(sourceCodes[0]),dtype=int)
-        # hammData = hammingCoding(sourceCodes[i])
+        hammData = hammingCoding(sourceCodes[i])
         # LDPCData = get_ldpc_code_params(sourceCodes[i])
         # classTrellis(memory, g_matrix, feedback=0, code_type='default')
         # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
@@ -102,8 +108,8 @@ for z in range(1):
         plt.yscale('log')
         plt.grid(True)
 
-        monteTransmit(EbNo, origData, strData)
-        # recieveArr = monteTransmit(EbNo, hammData, strData, 1, i)
+        monteTransmit(EbNo, origData, byteData)
+        recieveArr = monteTransmit(EbNo, hammData, byteData, 1, i)
         # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
         # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)
         # recieveArr = monteTransmit(EbNo, turboData, sourceCodes[i], 4)
@@ -113,4 +119,4 @@ for z in range(1):
         plt.close()
         print("")
     
-        '''
+        
