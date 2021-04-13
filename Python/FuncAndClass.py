@@ -10,12 +10,14 @@ import zlib # Deflate/Inflate
 import lzma # LZMA compression
 import bz2 # bzip2 compression
 import zstandard # ZSTD compression
-from functools import reduce; from operator import ixor # To help with error correction
 
 # Importing the tools need from the commPy library
 from commpy.modulation import QAMModem, Modem
 from commpy.channels import awgn
 from commpy.channelcoding import viterbi_decode, map_decode, turbo_decode, ldpc_bp_decode
+
+# To help with error correction
+from functools import reduce; from operator import xor 
 
 # Global Variables
 totWithHammSize = 8
@@ -155,7 +157,7 @@ class HuffmanCoding:
         padded_encoded_text = self.pad_encoded_text(encoded_text)
 
         b = self.get_byte_array(padded_encoded_text)
-        binData = "".join(map(turnBin,  b))
+        binData = "".join(map(turnBin, b))
         return binData
 
     # functions for decompression
@@ -190,7 +192,7 @@ class HuffmanCoding:
             byte=byteData.read(1)
         encoded_text=self.remove_padding(bit_string)
         decompressed_text=self.decode_text(encoded_text)
-        return decompressed_text
+        return bytes(decompressed_text, 'utf-8')
 
 def huffComp(data):
     if type(data)!=str: str(data,'utf-8') 
@@ -251,13 +253,12 @@ def LZWEnc(data, code_width=12):
     for data in compressed_data:
         # Saves the code as an unsigned short
         encodedLZW += struct.pack('>H', int(data))
-    print(encodedLZW)
     binData = "".join(map(turnBin, encodedLZW))
     return binData
 
 def LZWDec(data, code_width=12): 
     dataInt = int(data,2)
-    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='little')
+    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
     data = bytearray(data)
     print(data)
     maximum_table_size = pow(2,int(code_width))
@@ -283,7 +284,6 @@ def LZWDec(data, code_width=12):
     # Iterating through the codes.
     # LZW Decompression algorithm
     for code in compressed_data:
-        
         # If we find a new 
         if not (code in dictionary):
             dictionary[code] = phrase + (phrase[0])
@@ -307,18 +307,18 @@ def LZWDec(data, code_width=12):
 def deflate(data, compresslevel=9):
     if type(data)!=bytes: data = bytes(data, 'utf-8')
     compress=zlib.compressobj(compresslevel, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0 )
-    deflated=compress.compress(data)
-    deflated += compress.flush()
-    binData = "".join(map(turnBin, deflated))
+    data=compress.compress(data)
+    data += compress.flush()
+    binData = "".join(map(turnBin, data))
     return binData
 
 def inflate(data):
     dataInt = int(data,2)
     data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
     decompress=zlib.decompressobj(-zlib.MAX_WBITS)
-    inflated=decompress.decompress(data)
-    inflated += decompress.flush()
-    return str(inflated, 'utf-8')
+    data=decompress.decompress(data)
+    data += decompress.flush()
+    return data
 
 # Functions for LZMA Compression
 def LZMAComp(data):
@@ -333,7 +333,7 @@ def LZMADeComp(data):
     data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
     decompressor = lzma.LZMADecompressor()
     data = decompressor.decompress(data)
-    return str(data, 'utf-8')
+    return data
 
 # Functions for ZSTD Compression
 def zstdComp(data):
@@ -348,25 +348,43 @@ def zstdDeComp(data):
     data= dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')    
     decompressor = zstandard.ZstdDecompressor()
     data = decompressor.decompress(data)
-    return str(data, 'utf-8')
-    
+    return data
+
+# Functions for bzip2
+def bzipComp(data):
+    if type(data) != bytes: data = bytes(data,'utf-8')
+    data = bz2.compress(data)
+    binData = "".join(map(turnBin, data))
+    return binData
+
+def bzipDecomp(data):
+    dataInt = int(data,2)
+    data= dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')    
+    data = bz2.decompress(data)
+    return data
+
 # Functions for hamming code
-def hammingCoding(data):
+def hammingEnc(data):
+    data = ''.join([str(i) for i in data])
     slicedStr=[]
     for i in range(noHammSize, len(data)+1, noHammSize):
         slicedStr.append(data[i-noHammSize:i])
     encodedStr=[]
     for j in range(0, len(slicedStr)):
         # Calculate the no of Redundant Bits Required
-        m=len(slicedStr[j])
+        arr = [int(i) for i in slicedStr[j]]
+        m=len(arr)
         r=calcRedundantBits(m)
-        arr=addParityBits(slicedStr[j], r)
-        arr=parityValues(arr)
+        posRed=posRedundantBits(m, r)
+        arr=calcValues(arr, posRed)
         encodedStr.append(arr)
     doneArr=''.join(encodedStr)
+    # In case your data is not equal to your channel rate
+    if len(data) % noHammSize != 0:
+        print("extras")
+        doneArr+=data[:-(len(data)%noHammSize)]
     # Data to be transferred
     doneArr=np.array(list(doneArr), dtype=int)
-    print("")
     return doneArr
 
 def calcRedundantBits(m):
@@ -376,35 +394,33 @@ def calcRedundantBits(m):
 	# Iterate over 0 .. m and return the value
 	# that satisfies the equation
 
-
 	for i in range(m):
 		if(2**i >= m + i + 1):  # Use the formula 2 ^ r >= m + r + 1
 			return i
 
-def addParityBits(data, r):
-    m=len(data)
-    data=list(data)
-    # if in postition that is a power of 2 then insert 0
-    data.insert(0, '0')
-    j=0
-    for i in range(1, m+1):
-        if i == 2**j:
-            data.insert(i, '0')
-            j += 1
-    data=''.join(data)
-    return data
+def posRedundantBits(m, r):
+    pos=[0] * r
+    j = 0
+    for i in range(1, m):
+        if i == 2**j: 
+            pos[j] = i
+            j+=1
+    return pos
 
-def parityValues(arr):
-    arr=[int(i) for i in list(arr)]
-    parityNo=reduce(ixor, arr)
-    parityNo=bin(parityNo).replace("0b", "")
-    parityNo=[int(i) for i in list(parityNo)]
-    for i in range(0, len(parityNo)): arr[2**i]=parityNo[i]
-    total=sum(arr)
-    if total % 2 == 0: arr[0]=0
-    else: arr[0]=1
-    arr=''.join([str(i) for i in arr])
-    return arr
+def evenOdd(bits):
+    if [i for i, bit in enumerate(bits) if bit] != []:
+        return reduce(lambda x,y: x^y, [i for i, bit in enumerate(bits) if bit]) % 2 
+    else:
+        return 0
+
+def calcValues(bits, posRed):   
+    for i in posRed:
+        val = evenOdd(bits)
+        bits.insert(i, val)
+    bits.insert(0, sum(bits) % 2)
+    error = reduce(lambda x,y: x^y, [i for i, bit in enumerate(bits) if not bit])
+    bits[error] = int(not bits[error])
+    return ''.join([str(i) for i in bits])
 
 def hammDec(recArr):
     slicedStr=[]
@@ -415,11 +431,14 @@ def hammDec(recArr):
     decodedStr=[]
     for j in range(0, len(slicedStr)):
         arr=slicedStr[j]
-        arr=[int(i) for i in list(arr)]
+        arr=np.array(list(arr), dtype=int)
         # determine position of error and if none then return 0
-        error=reduce(ixor, arr)
+        if [i for i, bit in enumerate(arr) if bit] != []:
+            error=reduce(lambda x,y: x^y, [i for i, bit in enumerate(arr) if bit])
+        else:
+            error = 0
         if error == 0:
-            # if this is true then no errors detected then just remove parity bits
+            # if no errors are detected then just remove parity bits
             decodedArr=remParityBits(arr)
             decodedStr.append(decodedArr)
         else:
@@ -448,7 +467,7 @@ def remParityBits(arr):
 # Transmittion
 def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
     BERarr=[None] * len(EbNo)
-    M=16
+    M=64
     numErrs=0
     answer=""
     for i in range(0, len(EbNo)):
@@ -466,7 +485,6 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             recieveArr=awgn(modArr, SNR, rate=rateHamming)
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=hammDec(demodArr)
-            # decodedData = decodedData[:len(transArr)]
             decodedData=''.join(str(i) for i in decodedData)
 
         elif code == 2:
@@ -507,18 +525,14 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=''.join(str(i) for i in demodArr)
 
-        deCompAlgo = [returnIt, huffDecomp, LZWDec, inflate, LZMADeComp, zstdDeComp] # Functions for decompression techniques we use
+        deCompAlgo = [returnIt, huffDecomp, inflate, LZMADeComp, zstdDeComp, bzipDecomp] # Functions for decompression techniques we use
         if source != 0:       
             decodedData = deCompAlgo[source](decodedData)
-            decodedData = bytes(decodedData, 'utf-8')  
-        else: 
-            decodedData=int(decodedData, 2).to_bytes((len(decodedData) + 7) // 8, byteorder='big')
         numErrs += np.sum(decodedData != sourceData)
         BERarr[i]=numErrs/len(sourceData)
     plt.semilogy(EbNo[::-1], BERarr, label=answer)
     print(answer)
     print("The number of errors in our code is ", numErrs)
     print("The Bit error ratio is ", BERarr[i])
-    print("")
-
+    print("\n")
     return demodArr
