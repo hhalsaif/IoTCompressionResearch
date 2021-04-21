@@ -12,21 +12,26 @@ import bz2 # bzip2 compression
 import zstandard # ZSTD compression
 
 # Importing the tools need from the commPy library
-from commpy.modulation import QAMModem, Modem
+from commpy.modulation import PSKModem, Modem
 from commpy.channels import awgn
 from commpy.channelcoding import viterbi_decode, map_decode, turbo_decode, ldpc_bp_decode
+from commpy.utilities import hamming_dist
 
 # To help with error correction
 from functools import reduce; from operator import xor 
 
 # Global Variables
-totWithHammSize = 8
-noHammSize = 4
+totWithHammSize = 64
+noHammSize = 57
 
 # Conversion to and from binary
 def binIt(arr):
     # Load data as bytes if its not otherwise continue
-    if type(arr) != bytes: arr = bytes(arr, 'utf-8')
+    if type(arr) != bytes: 
+        if type(arr) != str:
+            arr = bytes(str(arr), 'utf-8')
+        else:
+            arr = bytes(str(arr), 'utf-8')
     arr = bin(int.from_bytes(arr, byteorder='big'))[2:]
     return arr
 
@@ -260,7 +265,6 @@ def LZWDec(data, code_width=12):
     dataInt = int(data,2)
     data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
     data = bytearray(data)
-    print(data)
     maximum_table_size = pow(2,int(code_width))
     # Default values in order to read the compressed file
     compressed_data = []
@@ -315,6 +319,7 @@ def deflate(data, compresslevel=9):
 def inflate(data):
     dataInt = int(data,2)
     data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
+    
     decompress=zlib.decompressobj(-zlib.MAX_WBITS)
     data=decompress.decompress(data)
     data += decompress.flush()
@@ -367,6 +372,13 @@ def bzipDecomp(data):
 def hammingEnc(data):
     data = ''.join([str(i) for i in data])
     slicedStr=[]
+
+    global noHammSize 
+    global totWithHammSize
+    if noHammSize == 0:
+        noHammSize  = len(data)
+        totWithHammSize = noHammSize + calcRedundantBits(noHammSize)
+
     for i in range(noHammSize, len(data)+1, noHammSize):
         slicedStr.append(data[i-noHammSize:i])
     encodedStr=[]
@@ -381,8 +393,7 @@ def hammingEnc(data):
     doneArr=''.join(encodedStr)
     # In case your data is not equal to your channel rate
     if len(data) % noHammSize != 0:
-        print("extras")
-        doneArr+=data[:-(len(data)%noHammSize)]
+        doneArr+=data[len(data)-(len(data)%noHammSize):]
     # Data to be transferred
     doneArr=np.array(list(doneArr), dtype=int)
     return doneArr
@@ -450,19 +461,22 @@ def hammDec(recArr):
             # remove any parity bits
             decodedArr=remParityBits(arr)
             decodedStr.append(decodedArr)
+    if len(recArr) % noHammSize != 0:
+        uncodedData = recArr[len(recArr)-(len(recArr)%noHammSize):]
+        uncodedData = np.array(list(uncodedData), dtype=int)
+        decodedStr.append(uncodedData)
     finalArr=[j for i in decodedStr for j in i]
     return finalArr #, extraError
 
 def remParityBits(arr):
     # remove parity bits
     k=0
-    decodedArr=[]
+    decodedArr = []
     for i in range(1, len(arr)):
-        if i != 2**k:
-            decodedArr.append(arr[i])
-            k += 1
+        if i == 2**k: k += 1
+        else: decodedArr.append(arr[i])
     decodedArr=decodedArr[1:]
-    return decodedArr
+    return arr
 
 # Transmittion
 def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
@@ -470,22 +484,23 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
     M=64
     numErrs=0
     answer=""
+    sourceData = binIt(sourceData)        
+    sourceData=''.join([str(i) for i in sourceData])
+    sourceData = np.array(list(sourceData), dtype=int)
     for i in range(0, len(EbNo)):
         SNR=EbNo[i]
         # Simulating data transmission over a channel
-        mod=QAMModem(M)
-
-        # Stimulate error in transmission by adding gaussian noise
+        mod=PSKModem(M)
         modArr=mod.modulate(transArr)
-
+        # recieving and decoding data
         if code == 1:
             answer='Hamming Encoded'
-            modArr=mod.modulate(transArr)
-            rateHamming=noHammSize/totWithHammSize
+            r = totWithHammSize - noHammSize
+            rateHamming= 1-(r/(2**r -1))
             recieveArr=awgn(modArr, SNR, rate=rateHamming)
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=hammDec(demodArr)
-            decodedData=''.join(str(i) for i in decodedData)
+            decodedData=''.join([str(i) for i in decodedData])
 
         elif code == 2:
             rateLDPC=len(sourceData)/len(demodArr)
@@ -523,11 +538,12 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             answer='Original Data'
             recieveArr=awgn(modArr, SNR, rate=1)
             demodArr=mod.demodulate(recieveArr, 'hard')
-            decodedData=''.join(str(i) for i in demodArr)
-
+            decodedData=''.join([str(i) for i in demodArr])
+            decodedData = np.array(list(decodedData), dtype=int)
         deCompAlgo = [returnIt, huffDecomp, inflate, LZMADeComp, zstdDeComp, bzipDecomp] # Functions for decompression techniques we use
         if source != 0:       
             decodedData = deCompAlgo[source](decodedData)
+            decodedData = np.array(list(decodedData), dtype=int)
         numErrs += np.sum(decodedData != sourceData)
         BERarr[i]=numErrs/len(sourceData)
     plt.semilogy(EbNo[::-1], BERarr, label=answer)
