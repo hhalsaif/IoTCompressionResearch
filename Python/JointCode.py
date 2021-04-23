@@ -201,7 +201,7 @@ for z in range(1):
     plt.grid(True)
 
     print(sourceNames[i]+ ':')
-    # monteTransmit(EbNo, origData, decodedCodes[0])
+    monteTransmit(EbNo, origData, decodedCodes[0])
     recieveArr = monteTransmit(EbNo, hammData, decodedCodes[i], 1, i)
     # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
     # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)

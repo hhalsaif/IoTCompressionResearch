@@ -539,11 +539,10 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             recieveArr=awgn(modArr, SNR, rate=1)
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=''.join([str(i) for i in demodArr])
-            decodedData = np.array(list(decodedData), dtype=int)
         deCompAlgo = [returnIt, huffDecomp, inflate, LZMADeComp, zstdDeComp, bzipDecomp] # Functions for decompression techniques we use
         if source != 0:       
             decodedData = deCompAlgo[source](decodedData)
-            decodedData = np.array(list(decodedData), dtype=int)
+        decodedData = np.array(list(decodedData), dtype=int)
         numErrs += np.sum(decodedData != sourceData)
         BERarr[i]=numErrs/len(sourceData)
     plt.semilogy(EbNo[::-1], BERarr, label=answer)
