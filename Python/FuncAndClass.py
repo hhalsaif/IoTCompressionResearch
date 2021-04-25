@@ -10,6 +10,7 @@ import zlib # Deflate/Inflate
 import lzma # LZMA compression
 import bz2 # bzip2 compression
 import zstandard # ZSTD compression
+from re import sub # helper for RLE
 
 # Importing the tools need from the commPy library
 from commpy.modulation import PSKModem, Modem
@@ -45,7 +46,7 @@ def turnBin(v):
 
 def turnBack(b):
     i = int(b,2)
-    return i.to_bytes((len(i) + 7 ) // 8, byteorder = 'big')
+    return i.to_bytes((len(b) + 7 ) // 8, byteorder = 'big')
 
 # Huffman Coding
 class HuffmanCoding:
@@ -88,7 +89,17 @@ class HuffmanCoding:
             frequency[character] += 1
         return frequency
 
+    def make_entropy_dict(self, frequency):
+        total = sum(frequency.values())
+        entropy = {}
+        for key in frequency:
+            if not key in entropy:
+                entropy[key] = 0
+            entropy[key] += frequency[key] / total
+        return entropy
+
     def make_heap(self, frequency):
+        self.make_entropy_dict(frequency)
         for key in frequency:
             node = self.HeapNode(key, frequency[key])
             heapq.heappush(self.heap, node)
@@ -148,13 +159,12 @@ class HuffmanCoding:
         return b
 
     def compress(self, inpData):
-        if type(inpData) != str:
-            inpData = str(inpData, 'utf-8')
         text = inpData
         text = text.rstrip()
 
         frequency = self.make_frequency_dict(text)
-        self.make_heap(frequency)
+        entropy = self.make_entropy_dict(frequency)
+        self.make_heap(entropy)
         self.merge_nodes()
         self.make_codes()
 
@@ -162,8 +172,7 @@ class HuffmanCoding:
         padded_encoded_text = self.pad_encoded_text(encoded_text)
 
         b = self.get_byte_array(padded_encoded_text)
-        binData = "".join(map(turnBin, b))
-        return binData
+        return b
 
     # functions for decompression
 
@@ -187,7 +196,6 @@ class HuffmanCoding:
 
     def decompress(self, data):
         bit_string=""
-        data = int(data, 2).to_bytes((len(data) + 7) // 8, byteorder='big')
         byteData=io.BytesIO(data)
         byte=byteData.read(1)
         while(len(byte) > 0):
@@ -197,17 +205,72 @@ class HuffmanCoding:
             byte=byteData.read(1)
         encoded_text=self.remove_padding(bit_string)
         decompressed_text=self.decode_text(encoded_text)
-        return bytes(decompressed_text, 'utf-8')
+        return decompressed_text
 
+def RLEEnc(inp):
+    data = ''
+    for i in inp:
+        if i == '0': data += 'B'
+        if i == '1': data += 'W'
+    
+    encoding = ''
+    prev_char = ''
+    count = 1
+
+    if not data: return ''
+    for char in data:
+        # If the prev and current characters
+        # don't match...
+        if char != prev_char:
+            # ...then add the count and character
+            # to our encoding
+            if prev_char:
+                encoding += str(count) + prev_char
+            count = 1
+            prev_char = char
+        else:
+            # Or increment our counter
+            # if the characters do match
+            count += 1
+    else:
+        # Finish off the encoding
+        encoding += str(count) + prev_char
+        return encoding
+
+def RLEDec(data):
+    decode = ''
+    count = ''
+    for char in data:
+        # If the character is numerical...
+        if char.isdigit():
+            # ...append it to our count
+            count += char
+        else:
+            # Otherwise we've seen a non-numerical
+            # character and need to expand it for
+            # the decoding
+            decode += char * int(count)
+            count = ''
+    
+    decodedData =  ''
+    for i in decode:
+        if i == 'B': decodedData += '0'
+        if i == 'W': decodedData += '1'
+    return decodedData
+
+h = HuffmanCoding() 
 def huffComp(data):
-    if type(data)!=str: str(data,'utf-8') 
-    h = HuffmanCoding()
+    if type(data)!=str: str(data) 
+    data = RLEEnc(data)
     data = h.compress(data) 
+    data = ''.join(map(turnBin, data))
     return data
 
 def huffDecomp(data):
-    h = HuffmanCoding()
+    data = turnBack(data)
     data = h.decompress(data)
+    data = RLEDec(data)
+    data = turnBack(data)
     return data
 
 # Function for LZW Compression
@@ -317,9 +380,7 @@ def deflate(data, compresslevel=9):
     return binData
 
 def inflate(data):
-    dataInt = int(data,2)
-    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
-    
+    data = turnBack(data)
     decompress=zlib.decompressobj(-zlib.MAX_WBITS)
     data=decompress.decompress(data)
     data += decompress.flush()
@@ -334,8 +395,7 @@ def LZMAComp(data):
     return binData
 
 def LZMADeComp(data):
-    dataInt = int(data,2)
-    data=dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')
+    data = turnBack(data)
     decompressor = lzma.LZMADecompressor()
     data = decompressor.decompress(data)
     return data
@@ -349,8 +409,7 @@ def zstdComp(data):
     return binData
 
 def zstdDeComp(data):
-    dataInt = int(data,2)
-    data= dataInt.to_bytes((dataInt.bit_length() + 7) // 8, byteorder='big')    
+    data = turnBack(data)   
     decompressor = zstandard.ZstdDecompressor()
     data = decompressor.decompress(data)
     return data
@@ -479,13 +538,13 @@ def remParityBits(arr):
     return arr
 
 # Transmittion
+deCompAlgo = [returnIt, huffDecomp, inflate, LZMADeComp, zstdDeComp, bzipDecomp] # Functions for decompression techniques we use
 def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
     BERarr=[None] * len(EbNo)
     M=64
     numErrs=0
     answer=""
-    sourceData = binIt(sourceData)        
-    sourceData=''.join([str(i) for i in sourceData])
+    sourceData = ''.join(map(turnBin, sourceData))
     sourceData = np.array(list(sourceData), dtype=int)
     for i in range(0, len(EbNo)):
         SNR=EbNo[i]
@@ -534,14 +593,13 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             numErrs += np.sum(sourceData != decodedData)
             BERarr[i]=numErrs/decodedData.size
 
-        else:
+        if code == 0:
             answer='Original Data'
             recieveArr=awgn(modArr, SNR, rate=1)
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=''.join([str(i) for i in demodArr])
-        deCompAlgo = [returnIt, huffDecomp, inflate, LZMADeComp, zstdDeComp, bzipDecomp] # Functions for decompression techniques we use
-        if source != 0:       
-            decodedData = deCompAlgo[source](decodedData)
+        decodedData = deCompAlgo[source](decodedData) #Decompress our to the original source
+        decodedData = ''.join(map(turnBin, decodedData))
         decodedData = np.array(list(decodedData), dtype=int)
         numErrs += np.sum(decodedData != sourceData)
         BERarr[i]=numErrs/len(sourceData)

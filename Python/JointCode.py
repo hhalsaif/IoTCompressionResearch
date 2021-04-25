@@ -22,7 +22,7 @@ from pypapi import papi_high
 for z in range(1):
     print(z)
     # Data Generation of random string
-    sizeOfData = 4**2 #np.random.randint(1, 64)
+    sizeOfData = 4**4 #np.random.randint(1, 64)
     symbols = list(string.ascii_uppercase)
     arr = np.random.choice(symbols, sizeOfData) # The code
     strData = ''.join([str(i) for i in arr])
@@ -31,10 +31,10 @@ for z in range(1):
     df = pd.read_csv("Datasets/IOT-temp.csv")    
     temps = pd.Series(df['temp'])
     dataNo = np.random.randint(1,97600)
-    #data = temps[dataNo]
-    data = strData
-    #byteData = data.tobytes()
-    byteData = bytes(data, 'utf-8')
+    data = temps[dataNo]
+    #data = strData
+    byteData = data.tobytes()
+    #byteData = bytes(data, 'utf-8')
 
     # How many compression techniques do we want to use 
     noOfSources = 6
@@ -59,13 +59,14 @@ for z in range(1):
     # Tracking for benchmarking
     timeEn = [0.0] * noOfSources ; timeDe = [0.0] * noOfSources ; flopsEn = [0.0] * noOfSources; flopsDe = [0.0] * noOfSources
 
-  
+    transData =  ''.join(map(turnBin, byteData))
 
     # Benchmarking encoding of compression
     for i in range(noOfSources):
         # Time taken to compress
         timeStart = perf_counter_ns()
-        sourceCodes[i] = compAlgo[i](byteData)
+        if i == 1: sourceCodes[i] = compAlgo[i](transData)
+        else : sourceCodes[i] = compAlgo[i](byteData)
         timeStop = perf_counter_ns()
         timeEn[i] = timeStop - timeStart
 
@@ -103,8 +104,8 @@ for z in range(1):
     for i in range(0, noOfSources):
         if decodedCodes[i] != decodedCodes[0]:
             print('There is an error in', sourceNames[i])
-            print(decodedCodes[i])
-            print(decodedCodes[0])
+            print('Original Code is', decodedCodes[0])
+            print('Recieved Code is', decodedCodes[i])
             print("")
         print("Using ", sourceNames[i], " The size is ", str(len(sourceCodes[i])) + ":")
         print("Compression ratio of " , len(sourceCodes[0])/len(sourceCodes[i]))
@@ -201,7 +202,7 @@ for z in range(1):
     plt.grid(True)
 
     print(sourceNames[i]+ ':')
-    monteTransmit(EbNo, origData, decodedCodes[0])
+    monteTransmit(EbNo, origData, decodedCodes[0], code=0, source=0)
     recieveArr = monteTransmit(EbNo, hammData, decodedCodes[i], 1, i)
     # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
     # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)
