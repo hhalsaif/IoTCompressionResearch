@@ -19,7 +19,7 @@ from FuncAndClass import *
 from time import perf_counter_ns
 from pypapi import papi_high
 
-for z in range(1):
+for z in range(10):
     print(z)
     # Data Generation of random string
     sizeOfData = 4**4 #np.random.randint(1, 64)
@@ -39,7 +39,7 @@ for z in range(1):
     # How many compression techniques do we want to use 
     noOfSources = 6
     # How many Channel codes do we want to use
-    noOfChannels = 1
+    noOfChannels = 2
 
     # Data that will help with comparisions of compression techniques
     sourceNames = ["Original", "Huffman","DEFLATE", "LZMA", "Zstandard", "bz2"]
@@ -113,7 +113,7 @@ for z in range(1):
         print("The time taken to decompress", timeDe[i])
         print("Number of FLOPS to compress", flopsEn[i])
         print("Number of FLOPS to decompress", flopsDe[i])
-        # print("Estimated Saved Energy", (sigPower[0] - sigPower[i]) * 100)
+        print("Estimated Saved Energy", (sigPower[i] - sigPower[0]))
         print("\n")
         # plotting for better visuals
         plt.bar(sourceNames[i], len(sourceCodes[i]), align='center')
@@ -184,31 +184,25 @@ for z in range(1):
     
     '''
     #Transmission
-    #for i in range(0, noOfSources):
     i=1
-    # hamming code
-    origData = np.array(list(sourceCodes[0]), dtype=int)
-    hammData = hammingEnc(sourceCodes[i])
-    # LDPCData = get_ldpc_code_params(sourceCodes[i])
-    # classTrellis(memory, g_matrix, feedback=0, code_type='default')
-    # convData = conv_encode(sourceCodes[i], trellis, termination='term', puncture_matrix=None)
-    # turboData = turbo_encode(sourceCodes[i], trellis1, trellis2, interleaver)
+    sourceData = np.array(list(sourceCodes[i]), dtype=int)
+    j=1
+    origData = sourceData
+    protectedData = channelAlgo[j-1](sourceData)
 
-    EbNo = np.arange(-40, 10)
+    EbNo = np.arange(-40, 20)
     plt.xlabel('EbNo(dB)')
     plt.ylabel('BER')
     plt.title('BER vs SNR')
-    plt.yscale('symlog')
+    plt.yscale('log')
     plt.grid(True)
 
     print(sourceNames[i]+ ':')
-    monteTransmit(EbNo, origData, decodedCodes[0], code=0, source=0)
-    recieveArr = monteTransmit(EbNo, hammData, decodedCodes[i], 1, i)
-    # recieveArr = monteTransmit(EbNo, dict(subString.split("=") for subString in sourceCodes[i].split(";")) + LDPCData, LDPCData, 2)
-    # recieveArr = monteTransmit(EbNo, convData, sourceCodes[i], 3)
-    # recieveArr = monteTransmit(EbNo, turboData, sourceCodes[i], 4)
+    monteTransmit(EbNo, origData, decodedCodes[0], code=0, source=1)
+    recieveArr = monteTransmit(EbNo, protectedData, decodedCodes[i], code=j, source=1)
+
     plt.legend()
-    plt.savefig('BERSNR/' + sourceNames[i] + '/BERSNR_Comparison'+str(z)+'.png', transparent=True, format='png')
+    plt.savefig('BERSNR/' + sourceNames[i] + '/BERSNR_Comparison'+str(z)+ channelNames[j] + '.png', transparent=True, format='png')
     plt.show()
     plt.close()
     print("")

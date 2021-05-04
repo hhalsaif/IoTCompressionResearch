@@ -22,23 +22,17 @@ from commpy.utilities import hamming_dist
 from functools import reduce; from operator import xor 
 
 # Global Variables
-totWithHammSize = 64
-noHammSize = 57
+totWithHammSize = 8
+noHammSize = 4
 
 # Conversion to and from binary
-def binIt(arr):
+def binIt(v):
     # Load data as bytes if its not otherwise continue
-    if type(arr) != bytes: 
-        if type(arr) != str:
-            arr = bytes(str(arr), 'utf-8')
-        else:
-            arr = bytes(str(arr), 'utf-8')
-    arr = bin(int.from_bytes(arr, byteorder='big'))[2:]
-    return arr
+    binData = "".join(map(turnBin, v))
+    return binData
 
-def returnIt(arr):
-    arr = int(arr, 2).to_bytes((len(arr) + 7) // 8, byteorder='big')
-    return arr
+def returnIt(b):
+    return turnBack(b)
 
 def turnBin(v):
     b = bin(v)[2:]
@@ -261,15 +255,16 @@ def RLEDec(data):
 h = HuffmanCoding() 
 def huffComp(data):
     if type(data)!=str: str(data) 
-    data = RLEEnc(data)
+    #data = RLEEnc(data)
     data = h.compress(data) 
     data = ''.join(map(turnBin, data))
     return data
-
+    
 def huffDecomp(data):
     data = turnBack(data)
     data = h.decompress(data)
-    data = RLEDec(data)
+    #data = RLEDec(data)
+    print('data to be turned to bytes', data)
     data = turnBack(data)
     return data
 
@@ -434,6 +429,7 @@ def hammingEnc(data):
 
     global noHammSize 
     global totWithHammSize
+
     if noHammSize == 0:
         noHammSize  = len(data)
         totWithHammSize = noHammSize + calcRedundantBits(noHammSize)
@@ -598,11 +594,11 @@ def monteTransmit(EbNo, transArr, sourceData, code=0, source=0):
             recieveArr=awgn(modArr, SNR, rate=1)
             demodArr=mod.demodulate(recieveArr, 'hard')
             decodedData=''.join([str(i) for i in demodArr])
-        decodedData = deCompAlgo[source](decodedData) #Decompress our to the original source
-        decodedData = ''.join(map(turnBin, decodedData))
+        # decodedData = deCompAlgo[source](decodedData) #Decompress our to the original source
+        # decodedData = ''.join(map(turnBin, decodedData))
         decodedData = np.array(list(decodedData), dtype=int)
-        numErrs += np.sum(decodedData != sourceData)
-        BERarr[i]=numErrs/len(sourceData)
+        numErrs += np.sum(decodedData != transArr)
+        BERarr[i]=numErrs/len(transArr)
     plt.semilogy(EbNo[::-1], BERarr, label=answer)
     print(answer)
     print("The number of errors in our code is ", numErrs)
